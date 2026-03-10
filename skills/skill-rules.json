@@ -1,0 +1,43 @@
+{
+  "version": "1.1",
+  "description": "Skill activation triggers for Claude Code. Controls when skills automatically suggest or block actions.",
+  "skills": {
+    "skill-developer": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "description": "Meta-skill for creating and managing Claude Code skills",
+      "promptTriggers": {
+        "keywords": ["skill system", "create skill", "add skill", "skill triggers", "skill rules", "hook system", "skill development", "skill-rules.json"],
+        "intentPatterns": ["(how do|how does|explain).*?skill", "(create|add|modify|build).*?skill", "skill.*?(work|trigger|activate|system)"]
+      }
+    },
+    "codebase-explorer": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "description": "Meta-skill for exploring local codebase using codebase-memory-mcp",
+      "promptTriggers": {
+        "keywords": ["investigate", "understand code", "explore", "use codebase-memory", "use codebase-memory-mcp", "graph query", "find callers", "trace path"],
+        "intentPatterns": ["(how do|how does|explain).*?code", "(create|add|modify|build).*?method", "(create|add|modify|build).*?class", "(create|add|modify|build).*?function", "code.*?(work|trigger|structure|system)"]
+      }
+    },
+    "rtk-workflow": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "medium",
+      "description": "RTK Bash workflow — compact command output with raw escape when debugging",
+      "promptTriggers": {
+        "keywords": ["rtk", "token savings", "bash output", "raw output", "git diff", "go test", "command output"],
+        "intentPatterns": ["(optimi[sz]e|reduce).*?(tokens|output)", "(debug|inspect).*?(bash|shell|command)", "(why|how).*?rtk"]
+      }
+    }
+  },
+  "notes": {
+    "enforcement_types": {
+      "suggest": "Skill suggestion appears but doesn't block execution",
+      "block": "Requires skill to be used before proceeding (guardrail)",
+      "warn": "Shows warning but allows proceeding"
+    }
+  }
+}

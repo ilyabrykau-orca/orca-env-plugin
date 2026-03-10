@@ -1,0 +1,1 @@
+Read the pyproject.toml configuration, then find the main entry point function it references in the Python code.

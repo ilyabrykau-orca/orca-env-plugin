@@ -1,0 +1,1 @@
+Check the project documentation for how to add a new sensor type to the system.
