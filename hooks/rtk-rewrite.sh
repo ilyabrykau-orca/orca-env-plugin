@@ -1,67 +1,107 @@
 #!/usr/bin/env bash
-# RTK auto-rewrite hook for Claude Code PreToolUse:Bash.
-# Thin delegate: parse Claude Code JSON, call `rtk rewrite`, emit updatedInput.
+# rtk-hook-version: 3
+# RTK Claude Code hook — rewrites commands to use rtk for token savings.
+# Requires: rtk >= 0.23.0, jq
+#
+# This is a thin delegating hook: all rewrite logic lives in `rtk rewrite`,
+# which is the single source of truth (src/discover/registry.rs).
+# To add or change rewrite rules, edit the Rust registry — not this file.
+#
+# Exit code protocol for `rtk rewrite`:
+#   0 + stdout  Rewrite found, no deny/ask rule matched → auto-allow
+#   1           No RTK equivalent → pass through unchanged
+#   2           Deny rule matched → pass through (Claude Code native deny handles it)
+#   3 + stdout  Ask rule matched → rewrite but let Claude Code prompt the user
 
-set -u
-
-LOG_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude}/logs"
-LOG_FILE="${LOG_DIR}/hooks.jsonl"
-mkdir -p "$LOG_DIR" 2>/dev/null || true
-
-log_json() {
-  local event="$1"
-  local detail="$2"
-  local extra="${3:-{}}"
-  if command -v jq >/dev/null 2>&1; then
-    jq -cn       --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)"       --arg hook "rtk-rewrite"       --arg event "$event"       --arg detail "$detail"       --argjson extra "$extra"       '{ts:$ts,hook:$hook,event:$event,detail:$detail} + $extra' >> "$LOG_FILE" 2>/dev/null || true
-  fi
-}
-
-if ! command -v jq >/dev/null 2>&1 || ! command -v rtk >/dev/null 2>&1; then
-  log_json "skip" "deps_missing"
+if ! command -v jq &>/dev/null; then
+  echo "[rtk] WARNING: jq is not installed. Hook cannot rewrite commands. Install jq: https://jqlang.github.io/jq/download/" >&2
   exit 0
+fi
+
+if ! command -v rtk &>/dev/null; then
+  echo "[rtk] WARNING: rtk is not installed or not in PATH. Hook cannot rewrite commands. Install: https://github.com/rtk-ai/rtk#installation" >&2
+  exit 0
+fi
+
+# Version guard: rtk rewrite was added in 0.23.0.
+# Older binaries: warn once and exit cleanly (no silent failure).
+# Cache the version check to avoid spawning multiple processes on every hook call.
+CACHE_DIR=${XDG_CACHE_HOME:-$HOME/.cache}
+CACHE_FILE="$CACHE_DIR/rtk-hook-version-ok"
+if [ ! -f "$CACHE_FILE" ]; then
+  RTK_VERSION_RAW=$(rtk --version 2>/dev/null)
+  RTK_VERSION=${RTK_VERSION_RAW#rtk }
+  RTK_VERSION=${RTK_VERSION%% *}
+  if [ -n "$RTK_VERSION" ]; then
+    IFS=. read -r MAJOR MINOR PATCH <<<"$RTK_VERSION"
+    # Require >= 0.23.0
+    if [ "$MAJOR" -eq 0 ] && [ "$MINOR" -lt 23 ]; then
+      echo "[rtk] WARNING: rtk $RTK_VERSION is too old (need >= 0.23.0). Upgrade: cargo install rtk" >&2
+      exit 0
+    fi
+  fi
+  mkdir -p "$CACHE_DIR" 2>/dev/null
+  touch "$CACHE_FILE" 2>/dev/null
 fi
 
 INPUT=$(cat)
-CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
-[ -z "$CMD" ] && { log_json "skip" "empty_command"; exit 0; }
+CMD=$(jq -r '.tool_input.command // empty' <<<"$INPUT")
 
-case "$CMD" in
-  CLAUDE_RAW=1*|*" CLAUDE_RAW=1 "*)
-    log_json "skip" "raw_bypass" "$(jq -cn --arg cmd "$CMD" '{command:$cmd}')"
-    exit 0 ;;
-esac
-
-case "$CMD" in
-  *'|'*|*'>'*|*'<'*|*'&&'*|*'||'*|*';'*|*'$('*|*'`'*|*'<<'*)
-    log_json "skip" "composite_shell" "$(jq -cn --arg cmd "$CMD" '{command:$cmd}')"
-    exit 0 ;;
-esac
-
-REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null)
-RC=$?
-case $RC in
-  0|3) ;;
-  1)
-    log_json "skip" "no_rewrite" "$(jq -cn --arg cmd "$CMD" '{command:$cmd}')"
-    exit 0 ;;
-  2)
-    log_json "deny" "rtk_deny_rule" "$(jq -cn --arg cmd "$CMD" '{command:$cmd}')"
-    jq -n --arg reason "RTK deny rule matched: $CMD" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
-    exit 0 ;;
-  *)
-    log_json "skip" "rtk_error" "$(jq -cn --arg cmd "$CMD" --arg rc "$RC" '{command:$cmd,rc:$rc}')"
-    exit 0 ;;
-esac
-
-if [ -z "$REWRITTEN" ] || [ "$REWRITTEN" = "$CMD" ]; then
-  log_json "allow" "already_raw_or_wrapped" "$(jq -cn --arg cmd "$CMD" '{command:$cmd}')"
-  jq -n '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"allow",permissionDecisionReason:"RTK wrapper"}}'
+if [ -z "$CMD" ]; then
   exit 0
 fi
 
-UPDATED_INPUT=$(printf '%s' "$INPUT" | jq --arg cmd "$REWRITTEN" '.tool_input | .command = $cmd' 2>/dev/null)
-[ -z "$UPDATED_INPUT" ] && { log_json "skip" "updated_input_build_failed"; exit 0; }
+# CLAUDE_RAW=1 prefix: skip RTK, pass through unchanged.
+case "$CMD" in
+  CLAUDE_RAW=1\ *|CLAUDE_RAW=1)
+    exit 0 ;;
+esac
 
-log_json "rewrite" "rtk_auto_rewrite" "$(jq -cn --arg before "$CMD" --arg after "$REWRITTEN" '{before:$before,after:$after}')"
-jq -n --argjson updated "$UPDATED_INPUT" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"allow",permissionDecisionReason:"RTK auto-rewrite",updatedInput:$updated}}'
+# Delegate all rewrite + permission logic to the Rust binary.
+REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null)
+EXIT_CODE=$?
+
+case $EXIT_CODE in
+  0)
+    # Rewrite found, no permission rules matched — safe to auto-allow.
+    # If the output is identical, the command was already using RTK.
+    [ "$CMD" = "$REWRITTEN" ] && exit 0
+    ;;
+  1)
+    # No RTK equivalent — pass through unchanged.
+    exit 0
+    ;;
+  2)
+    # Deny rule matched — let Claude Code's native deny rule handle it.
+    exit 0
+    ;;
+  3)
+    # Ask rule matched — rewrite the command but do NOT auto-allow so that
+    # Claude Code prompts the user for confirmation.
+    ;;
+  *)
+    exit 0
+    ;;
+esac
+
+if [ "$EXIT_CODE" -eq 3 ]; then
+  # Ask: rewrite the command, omit permissionDecision so Claude Code prompts.
+  jq -c --arg cmd "$REWRITTEN" \
+    '.tool_input.command = $cmd | {
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "updatedInput": .tool_input
+      }
+    }' <<<"$INPUT"
+else
+  # Allow: rewrite the command and auto-allow.
+  jq -c --arg cmd "$REWRITTEN" \
+    '.tool_input.command = $cmd | {
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+        "permissionDecisionReason": "RTK auto-rewrite",
+        "updatedInput": .tool_input
+      }
+    }' <<<"$INPUT"
+fi
