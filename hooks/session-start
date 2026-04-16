@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# SessionStart hook: detect Serena project + inject orca-setup skill
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Detect Serena project from $PWD
+# Order matters: check more-specific paths before less-specific
+detect_project() {
+    local cwd="$PWD"
+    case "$cwd" in
+        */orca-cloud-platform*) echo "" ;;
+        */orca-runtime-sensor*) echo "orca-runtime-sensor" ;;
+        */orca-sensor*)         echo "orca-sensor" ;;
+        */helm-charts*)         echo "helm-charts" ;;
+        */src/orca*)            echo "orca" ;;
+        */src)                  echo "orca-unified" ;;
+        *)                      echo "" ;;
+    esac
+}
+
+# Read master skill content
+skill_content=$(< "${PLUGIN_ROOT}/skills/orca-setup/SKILL.md") 2>/dev/null || skill_content=""
+
+# Detect project
+project=$(detect_project)
+
+# Build project activation block
+project_ctx=""
+if [ -n "$project" ]; then
+    project_ctx="SERENA WORKSPACE DETECTED: project='${project}' at ${PWD}
+
+IMMEDIATELY call: mcp__serena__activate_project(project=${project})
+Then: mcp__serena__list_memories() and read relevant memories."
+fi
+
+# Build session context as plain string (jq handles escaping)
+session_ctx="<EXTREMELY_IMPORTANT>
+You have orca workspace superpowers.
+
+**Orca workspace setup — read and follow these instructions:**
+
+${skill_content}"
+if [ -n "$project" ]; then
+    session_ctx="${session_ctx}
+
+${project_ctx}"
+fi
+session_ctx="${session_ctx}
+</EXTREMELY_IMPORTANT>"
+
+# Output dual-shape JSON (additionalContext for Claude Code, additional_context for Cursor)
+jq -n --arg ctx "$session_ctx" \
+  '{"additional_context": $ctx,
+    "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": $ctx}}'
+
+exit 0

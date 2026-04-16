@@ -1,0 +1,1 @@
+I want to add a new method to the sensor agent. What file would I edit and what existing methods does the agent have?
