@@ -1,1 +1,0 @@
-Search for the SensorAgent interface in the Go sensor code. What methods does it define?

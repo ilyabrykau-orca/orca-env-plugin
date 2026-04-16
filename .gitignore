@@ -1,7 +1,0 @@
-.DS_Store
-.idea/
-.serena/
-logs/
-state/
-node_modules/
-*.tmp
