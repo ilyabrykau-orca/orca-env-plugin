@@ -9,7 +9,7 @@
       "name": "claude-toolkit",
       "source": "./.claude-plugin",
       "description": "MCP tool routing, native tool enforcement, edit guards, and session analytics for Claude Code",
-      "version": "1.2.0",
+      "version": "1.1.0",
       "author": {
         "name": "Orca Security"
       }
