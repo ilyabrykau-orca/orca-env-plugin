@@ -1,7 +1,6 @@
 import { readFileSync, writeSync } from "fs";
 import { handlePreToolUse } from "./hot/pre-tool-use";
 import { handleSessionStart } from "./cold/session-start";
-import { handlePromptSubmit } from "./cold/prompt-submit";
 import { handlePostToolUse } from "./cold/post-tool-use";
 import { handleStop } from "./cold/stop";
 
@@ -22,12 +21,6 @@ if (event === "pre-tool-use") {
     switch (event) {
       case "session-start": {
         const r = handleSessionStart(input);
-        if (r.stdout) writeSync(1, r.stdout);
-        process.exit(r.exitCode);
-        break;
-      }
-      case "prompt-submit": {
-        const r = handlePromptSubmit(input);
         if (r.stdout) writeSync(1, r.stdout);
         process.exit(r.exitCode);
         break;

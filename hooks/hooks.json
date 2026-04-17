@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write|Grep|Glob|Search|Bash|mcp__serena__(replace_symbol_body|replace_content|insert_after_symbol|insert_before_symbol|rename_symbol)",
+        "matcher": "Read|Edit|Write|Grep|Glob|Search|Bash|mcp__serena__(replace_symbol_body|replace_content|insert_after_symbol|insert_before_symbol|rename_symbol|safe_delete_symbol)",
         "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' pre-tool-use", "timeout": 5 }]
       }
     ],
@@ -10,11 +10,6 @@
       {
         "matcher": "startup|resume|clear|compact",
         "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' session-start", "async": false }]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' prompt-submit" }]
       }
     ],
     "PostToolUse": [

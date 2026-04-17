@@ -1,10 +1,10 @@
 # claude-toolkit
 
-Claude Code plugin that enforces MCP tool routing for codebases using [Codanna](https://github.com/bartolli/codanna) and [Serena](https://github.com/aorwall/serena).
+Claude Code plugin enforcing MCP tool routing for [Codanna](https://github.com/bartolli/codanna) and [Serena](https://github.com/aorwall/serena) codebases.
 
-Instead of letting Claude use native Read/Edit/Grep on code files, this plugin blocks them and routes to MCP-powered alternatives — giving you semantic search, symbolic editing, reference tracking, and impact analysis.
+Blocks native Read/Edit/Grep on code files → routes to MCP alternatives (semantic search, symbolic editing, reference tracking, impact analysis).
 
-## What it does
+## Routing
 
 | Native tool | Blocked on | Routed to |
 |---|---|---|
@@ -13,21 +13,20 @@ Instead of letting Claude use native Read/Edit/Grep on code files, this plugin b
 | `Grep` | All files | `mcp__codanna__semantic_search_with_context` |
 | `Glob` | All files | `mcp__codanna__search_symbols` |
 
-Non-code files (.json, .yaml, .md, .toml) pass through to native tools.
+Non-code files (.json, .yaml, .md, .toml) pass through.
 
-### Additional features
-
-- **Serena edit guard** — warns if you edit code without first calling `find_referencing_symbols` (prevents breaking callers)
-- **Project detection** — auto-detects workspace project from cwd, injects Serena activation context
-- **Skill activation** — suggests relevant skills (codanna, serena-workflow, docs) based on prompt keywords
-- **Session analytics** — tracks token usage, tool distribution, and costs per session
+### Extra features
+- **Serena edit guard** — warns on edit w/o `find_referencing_symbols`
+- **Project detection** — auto-detects workspace, injects Serena activation
+- **Skill activation** — suggests skills by prompt keywords
+- **Session analytics** — token usage, tool distribution, costs
 
 ## Prerequisites
 
-- [Claude Code](https://claude.ai/code) CLI installed
-- [Codanna](https://github.com/bartolli/codanna) running at `https://localhost:8443/mcp`
-- [Serena](https://github.com/aorwall/serena) running at `http://127.0.0.1:8765/mcp`
-- `jq` installed (`brew install jq`)
+- [Claude Code](https://claude.ai/code) CLI
+- [Codanna](https://github.com/bartolli/codanna) at `https://localhost:8443/mcp`
+- [Serena](https://github.com/aorwall/serena) at `http://127.0.0.1:8765/mcp`
+- `jq` (`brew install jq`)
 
 ## Install
 
@@ -39,13 +38,13 @@ claude plugin marketplace add orca-sensor-marketplace ilyabrykau-orca/orca-senso
 claude plugin install claude-toolkit@orca-sensor-marketplace
 ```
 
-Or install directly from the repo:
+Or from repo:
 
 ```bash
 claude plugin install --from-repo ilyabrykau-orca/claude-toolkit
 ```
 
-## Plugin structure
+## Structure
 
 ```
 hooks/
@@ -70,10 +69,7 @@ tests/
   integration/          ← integration tests + prompts
 ```
 
-## Hook latency
-
-All PreToolUse hooks run in a single bash process (~8-10ms).
-Node.js hooks (stop/subagent-stop) run once per session end.
+## Hook Latency
 
 | Hook | Latency | Frequency |
 |---|---|---|
@@ -93,11 +89,11 @@ bash tests/run-all.sh --unit
 bash tests/run-all.sh --unit --verbose
 ```
 
-## Configuration
+## Config
 
 ### Project detection
 
-The `session-start` hook detects the workspace from `$PWD`:
+`session-start` hook detects workspace from `$PWD`:
 
 | Path pattern | Detected project |
 |---|---|
@@ -107,11 +103,11 @@ The `session-start` hook detects the workspace from `$PWD`:
 | `*/src/orca*` | `orca` |
 | `*/src` | `orca-unified` |
 
-Edit `hooks/session-start` to add your own projects.
+Edit `hooks/session-start` for custom projects.
 
-### Blocked file extensions
+### Blocked extensions
 
-Edit the `case` pattern in `hooks/pre-tool-router` (line 41):
+Edit `case` pattern in `hooks/pre-tool-router` (line 41):
 
 ```bash
 *.py|*.go|*.ts|*.tsx|*.js|*.jsx|*.rs|*.cpp|*.c|*.h|*.hpp|*.rb|*.java|*.kt|*.php|*.scala|*.swift|*.sh|*.bash)

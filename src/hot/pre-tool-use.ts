@@ -121,11 +121,23 @@ function baseOf(path: string): string {
   return i < 0 ? path : path.substring(i + 1);
 }
 
-// Resolve to absolute
+// Resolve to absolute + normalize ../ segments (prevent path traversal bypass)
 function resolve(p: string): string {
-  if (p.charCodeAt(0) === 47) return p; // starts with /
-  if (p.charCodeAt(0) === 126 && p.charCodeAt(1) === 47) return HOME + p.substring(1); // ~/
-  return process.cwd() + "/" + p;
+  let abs: string;
+  if (p.charCodeAt(0) === 47) abs = p;
+  else if (p.charCodeAt(0) === 126 && p.charCodeAt(1) === 47) abs = HOME + p.substring(1);
+  else abs = process.cwd() + "/" + p;
+  // Normalize ../ to prevent path traversal bypass on ALLOWED_PATHS
+  if (abs.indexOf("..") >= 0) {
+    const parts = abs.split("/");
+    const normalized: string[] = [];
+    for (const part of parts) {
+      if (part === "..") { if (normalized.length > 1) normalized.pop(); }
+      else if (part !== ".") normalized.push(part);
+    }
+    abs = normalized.join("/") || "/";
+  }
+  return abs;
 }
 
 // ===========================================================================
@@ -157,6 +169,142 @@ function hasShellChars(cmd: string): boolean {
 }
 
 // ===========================================================================
+// BASH SOURCE GUARD -- block cat/head/tail/sed/awk on source files
+// ===========================================================================
+
+function isBashReadCmd(word: string): boolean {
+  switch (word) {
+    case "cat": case "head": case "tail": case "less": case "more":
+    case "bat": case "batcat":
+    case "wc": case "grep": case "egrep": case "fgrep": case "rg":
+    case "diff": case "file": case "strings": case "xxd": case "od":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isBashEditCmd(word: string): boolean {
+  switch (word) {
+    case "sed": case "awk": case "perl": case "ruby":
+    case "rm": case "chmod": case "chown": case "touch":
+    case "cp": case "mv": case "ln":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function bashCmdTargetsSource(cmd: string): "read" | "edit" | "" {
+  const parts = cmd.split(/\s+/);
+  if (parts.length < 2) return "";
+  // Skip env var prefixes (FOO=bar BAZ=1 cat file.py)
+  let cmdIdx = 0;
+  while (cmdIdx < parts.length && parts[cmdIdx].indexOf("=") > 0 &&
+         parts[cmdIdx].charCodeAt(0) !== 45 && parts[cmdIdx].charCodeAt(0) !== 47) {
+    cmdIdx++;
+  }
+  if (cmdIdx >= parts.length) return "";
+  if (parts.length - cmdIdx < 2) return "";
+  const bin = baseOf(parts[cmdIdx]);
+  const isRead = isBashReadCmd(bin);
+  const isEdit = isBashEditCmd(bin);
+  if (!isRead && !isEdit) return "";
+  let optsDone = false;
+  for (let i = cmdIdx + 1; i < parts.length; i++) {
+    const arg = parts[i];
+    if (!optsDone) {
+      if (arg === "--") { optsDone = true; continue; }
+      if (arg.charCodeAt(0) === 45) continue;
+    }
+    const abs = resolve(arg);
+    if (!abs.startsWith(SRC_PFX)) continue;
+    if (abs.startsWith(DOT_CLAUDE_PFX)) continue;
+    const ext = extOf(abs);
+    if (ext && isSourceExt(ext)) return isEdit ? "edit" : "read";
+  }
+  return "";
+}
+
+// Check compound commands: pipes, redirects, chains (&&, ;), tee, embedded paths
+function compoundCmdCheck(cmd: string): "read" | "edit" | "" {
+  // Redirect targets FIRST — writing to source is always an edit
+  const redirectRe = />{1,2}\s+([^\s<|&;]+)/;
+  const redirectMatch = cmd.match(redirectRe);
+  if (redirectMatch) {
+    const target = redirectMatch[1];
+    const clean = target.replace(/^["']|["']$/g, "");
+    const abs = resolve(clean);
+    if (abs.startsWith(SRC_PFX) && !abs.startsWith(DOT_CLAUDE_PFX)) {
+      const ext = extOf(abs);
+      if (ext && isSourceExt(ext)) return "edit";
+    }
+  }
+  // Check each && and ; segment for source access
+  const segments = cmd.split(/\s*(?:&&|;)\s*/);
+  let cdTarget = "";
+  for (const seg of segments) {
+    const trimmed = seg.trim();
+    if (!trimmed) continue;
+    // Track cd target for resolving relative paths in later segments
+    if (trimmed.startsWith("cd ")) {
+      const cdArg = trimmed.substring(3).trim().split(/\s/)[0];
+      cdTarget = cdArg;
+      continue;
+    }
+    // Resolve segment with cd context
+    let segToCheck = trimmed;
+    if (cdTarget && !trimmed.includes(SRC_PFX)) {
+      // Expand relative paths using cd target
+      const parts = trimmed.split(/\s+/);
+      const expanded = parts.map(p => {
+        if (p.charCodeAt(0) === 45) return p;
+        if (p.charCodeAt(0) === 47 || p.charCodeAt(0) === 126) return p;
+        if (p.indexOf("/") >= 0 || p.indexOf(".") >= 0) {
+          const resolved = resolve(cdTarget + "/" + p);
+          if (resolved.startsWith(SRC_PFX)) return resolved;
+        }
+        return p;
+      });
+      segToCheck = expanded.join(" ");
+    }
+    // Check pipe within segment
+    const pipeIdx = segToCheck.indexOf("|");
+    if (pipeIdx > 0) {
+      const firstPipe = segToCheck.substring(0, pipeIdx).trim();
+      const result = bashCmdTargetsSource(firstPipe);
+      if (result) return result;
+      const afterPipe = segToCheck.substring(pipeIdx + 1).trim();
+      const teeResult = bashCmdTargetsSource(afterPipe);
+      if (teeResult) return "edit";
+    } else {
+      const result = bashCmdTargetsSource(segToCheck);
+      if (result) return result;
+    }
+  }
+  // Scan entire command for embedded source paths
+  return scanForEmbeddedSourcePaths(cmd);
+}
+function scanForEmbeddedSourcePaths(cmd: string): "read" | "edit" | "" {
+  const srcIdx = cmd.indexOf(SRC_PFX);
+  if (srcIdx < 0) return "";
+  // Extract path starting at ~/src/
+  let end = srcIdx;
+  while (end < cmd.length) {
+    const c = cmd.charCodeAt(end);
+    // Stop at whitespace, quotes, parens, commas, semicolons
+    if (c === 32 || c === 9 || c === 34 || c === 39 || c === 41 ||
+        c === 44 || c === 59 || c === 10) break;
+    end++;
+  }
+  const path = cmd.substring(srcIdx, end);
+  if (path.startsWith(DOT_CLAUDE_PFX)) return "";
+  const ext = extOf(path);
+  if (ext && isSourceExt(ext)) return "edit";
+  return "";
+}
+
+// ===========================================================================
 // SERENA EDIT TOOLS -- check via startsWith for hot inline check
 // ===========================================================================
 
@@ -166,6 +314,7 @@ const SERENA_EDIT_PREFIXES = [
   "mcp__serena__insert_after_symbol",
   "mcp__serena__insert_before_symbol",
   "mcp__serena__rename_symbol",
+  "mcp__serena__safe_delete_symbol",
 ];
 
 function isSerenaEditTool(name: string): boolean {
@@ -201,7 +350,34 @@ export function handlePreToolUse(raw: string): void {
   if (toolName === "Bash") {
     const cmd = extractStr(raw, "command");
     if (!cmd) { process.exit(0); }
-    if (process.env.CLAUDE_RAW === "1" || hasShellChars(cmd)) {
+    if (process.env.CLAUDE_RAW === "1") {
+      process.exit(0);
+    }
+    if (!hasShellChars(cmd)) {
+      const bashTarget = bashCmdTargetsSource(cmd);
+      if (bashTarget === "read") {
+        logSync("deny", "Bash", cmd.substring(0, 80), "bash_src_read");
+        writeSync(1, DENY_EXPLORE);
+        process.exit(0);
+      }
+      if (bashTarget === "edit") {
+        logSync("deny", "Bash", cmd.substring(0, 80), "bash_src_edit");
+        writeSync(1, DENY_EDIT);
+        process.exit(0);
+      }
+    } else {
+      // Compound command — check first pipe segment + redirect targets
+      const compResult = compoundCmdCheck(cmd);
+      if (compResult === "read") {
+        logSync("deny", "Bash", cmd.substring(0, 80), "bash_compound_read");
+        writeSync(1, DENY_EXPLORE);
+        process.exit(0);
+      }
+      if (compResult === "edit") {
+        logSync("deny", "Bash", cmd.substring(0, 80), "bash_compound_edit");
+        writeSync(1, DENY_EDIT);
+        process.exit(0);
+      }
       process.exit(0);
     }
     // RTK rewrite -- only non-sync part, but only for Bash commands
@@ -270,10 +446,15 @@ export function handlePreToolUse(raw: string): void {
     process.exit(0); // unknown tool, fail open
   }
 
-  // Priority matches original: file_path ?? pattern ?? path
-  const filePath = extractStr(raw, "file_path") || extractStr(raw, "pattern") || extractStr(raw, "path");
+  // Tool-aware path extraction: Grep/Glob "pattern" is search text, not file path
+  let filePath: string;
+  if (toolName === "Grep" || toolName === "Search" || toolName === "Glob") {
+    filePath = extractStr(raw, "path") || process.cwd();
+  } else {
+    filePath = extractStr(raw, "file_path");
+  }
 
-  // No path -> fail open (FAST EXIT)
+  // No path -> fail open (FAST EXIT) -- only for Read/Edit/Write
   if (!filePath) { process.exit(0); }
 
   const abs = resolve(filePath);
@@ -281,8 +462,8 @@ export function handlePreToolUse(raw: string): void {
   // Allow ~/.claude/ (FAST EXIT)
   if (abs.startsWith(DOT_CLAUDE_PFX)) { process.exit(0); }
 
-  // Allow outside ~/src/ (FAST EXIT)
-  if (!abs.startsWith(SRC_PFX)) { process.exit(0); }
+  // Allow outside ~/src/ (FAST EXIT) -- exact ~/src match counts as inside
+  if (!abs.startsWith(SRC_PFX) && abs !== SRC_PFX.slice(0, -1)) { process.exit(0); }
 
   // -- Inside ~/src/ -- check extension --
   const ext = extOf(abs);
@@ -314,6 +495,30 @@ export function handlePreToolUse(raw: string): void {
     process.exit(0);
   }
 
+  // Grep/Glob on directories under ~/src without source-ext → deny
+  // (Grep without type/glob will search ALL files including source code)
+  if (!ext && abs.startsWith(SRC_PFX) && (toolName === "Grep" || toolName === "Search" || toolName === "Glob")) {
+    // Check if this is a non-exempt directory path (no extension = directory)
+    let isExempt = false;
+    const absSlash = abs + "/";
+    for (let i = 0; i < ALLOWED_PATHS.length; i++) {
+      if (abs.indexOf(ALLOWED_PATHS[i]) >= 0 || absSlash.endsWith(ALLOWED_PATHS[i])) { isExempt = true; break; }
+    }
+    if (!isExempt) {
+      // For Grep, only deny if no type/glob filter that limits to non-source files
+      if (toolName === "Grep" || toolName === "Search") {
+        const grepType = extractStr(raw, "type");
+        const grepGlob = extractStr(raw, "glob");
+        if (!grepType && !grepGlob) {
+          logSync("deny", toolName, filePath, "grep_src_dir");
+          writeSync(1, DENY_EXPLORE);
+          process.exit(0);
+        }
+      }
+      // For Glob, fall through to pattern check below
+    }
+  }
+
   // Grep/Glob type/glob filter check
   if (toolName === "Grep" || toolName === "Search") {
     const grepType = extractStr(raw, "type");
@@ -335,6 +540,18 @@ export function handlePreToolUse(raw: string): void {
   if (toolName === "Glob") {
     const pattern = extractStr(raw, "pattern");
     if (pattern) {
+      // Handle multi-ext: *.{go,py} → check each ext in braces
+      const braceMatch = pattern.match(/\.\{([^}]+)\}/);
+      if (braceMatch) {
+        const exts = braceMatch[1].split(",");
+        for (const e of exts) {
+          if (isSourceExt(e.trim())) {
+            logSync("deny", toolName, filePath, "glob_src_multi_ext");
+            writeSync(1, DENY_EXPLORE);
+            process.exit(0);
+          }
+        }
+      }
       const cleaned = pattern.replace(/[{}*?,]/g, "");
       const pExt = extOf(cleaned);
       if (pExt && isSourceExt(pExt)) {
