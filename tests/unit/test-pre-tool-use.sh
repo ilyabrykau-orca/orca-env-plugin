@@ -1,83 +1,83 @@
 #!/usr/bin/env bash
-# Unit test: PreToolUse enforcement hook
+# Unit test: PreToolUse enforcement (v2 binary)
+# The binary outputs JSON with permissionDecision:"deny" on stdout (exit 0) for blocks.
+# For allow, binary outputs nothing (exit 0).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../helpers.sh"
 
-HOOK="${PLUGIN_ROOT}/hooks/pre-tool-router"
+BINARY="${PLUGIN_ROOT}/dist/claude-toolkit"
 passed=0; failed=0
 
 echo "=== Unit: PreToolUse enforcement ==="
 echo ""
 
-# Helper: run hook with JSON input, capture exit code and stderr
+# Helper: run binary with JSON input, capture stdout
 run_enforcement() {
     local json="$1"
-    local stderr_file
-    stderr_file=$(mktemp)
-    local exit_code=0
-    echo "$json" | bash "$HOOK" 2>"$stderr_file" || exit_code=$?
-    local stderr_out
-    stderr_out=$(cat "$stderr_file")
-    rm -f "$stderr_file"
-    echo "${exit_code}|${stderr_out}"
+    echo "$json" | "$BINARY" pre-tool-use 2>/dev/null
 }
 
+# Expect a deny: stdout contains permissionDecision:"deny"
 test_block() {
     local json="$1"
     local test_name="$2"
     local expected_msg="$3"
-    local result
-    result=$(run_enforcement "$json")
-    local exit_code="${result%%|*}"
-    local stderr="${result#*|}"
-    if [ "$exit_code" = "2" ]; then
-        echo "  [PASS] $test_name (exit 2 = blocked)"
+    local stdout
+    stdout=$(run_enforcement "$json")
+    local decision
+    decision=$(echo "$stdout" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null || true)
+    if [ "$decision" = "deny" ]; then
+        echo "  [PASS] $test_name (deny in JSON output)"
         passed=$((passed+1))
     else
-        echo "  [FAIL] $test_name (expected exit 2, got $exit_code)"
+        echo "  [FAIL] $test_name (expected deny, got: ${stdout:0:200})"
         failed=$((failed+1))
     fi
-    if echo "$stderr" | /usr/bin/grep -q "$expected_msg"; then
+    local reason
+    reason=$(echo "$stdout" | jq -r '.hookSpecificOutput.permissionDecisionReason // empty' 2>/dev/null || true)
+    if echo "$reason" | /usr/bin/grep -q "$expected_msg"; then
         echo "  [PASS] $test_name — correct suggestion"
         passed=$((passed+1))
     else
-        echo "  [FAIL] $test_name — wrong suggestion: $stderr"
+        echo "  [FAIL] $test_name — wrong suggestion: $reason"
         failed=$((failed+1))
     fi
 }
 
+# Expect allow: stdout is empty (no deny JSON)
 test_allow() {
     local json="$1"
     local test_name="$2"
-    local result
-    result=$(run_enforcement "$json")
-    local exit_code="${result%%|*}"
-    if [ "$exit_code" = "0" ]; then
-        echo "  [PASS] $test_name (exit 0 = allowed)"
+    local stdout
+    stdout=$(run_enforcement "$json")
+    local decision
+    decision=$(echo "$stdout" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null || true)
+    if [ "$decision" != "deny" ]; then
+        echo "  [PASS] $test_name (allowed — no deny in output)"
         passed=$((passed+1))
     else
-        echo "  [FAIL] $test_name (expected exit 0, got $exit_code)"
+        echo "  [FAIL] $test_name (expected allow, got deny: ${stdout:0:200})"
         failed=$((failed+1))
     fi
 }
 
 echo "--- Blocks on code files ---"
 test_block '{"tool_name":"Read","tool_input":{"file_path":"src/main.py"}}' \
-    "Read .py blocked" "mcp__serena__"
+    "Read .py blocked" "codebase-memory-mcp"
 test_block '{"tool_name":"Read","tool_input":{"file_path":"pkg/agent/agent.go"}}' \
-    "Read .go blocked" "mcp__serena__"
+    "Read .go blocked" "codebase-memory-mcp"
 test_block '{"tool_name":"Edit","tool_input":{"file_path":"src/index.ts"}}' \
-    "Edit .ts blocked" "mcp__serena__replace"
+    "Edit .ts blocked" "Serena"
 test_block '{"tool_name":"Write","tool_input":{"file_path":"lib/utils.rs"}}' \
-    "Write .rs blocked" "mcp__serena__replace"
+    "Write .rs blocked" "Serena"
 test_block '{"tool_name":"Grep","tool_input":{"file_path":"src/sensor.cpp"}}' \
-    "Grep .cpp blocked" "mcp__codanna__"
+    "Grep .cpp blocked" "codebase-memory-mcp"
 test_block '{"tool_name":"Glob","tool_input":{"pattern":"**/*.py"}}' \
-    "Glob *.py blocked" "mcp__codanna__"
+    "Glob *.py blocked" "codebase-memory-mcp"
 test_block '{"tool_name":"Read","tool_input":{"file_path":"test/test_main.java"}}' \
-    "Read .java blocked" "mcp__serena__"
+    "Read .java blocked" "codebase-memory-mcp"
 
 echo ""
 echo "--- Allows non-code files ---"
@@ -95,13 +95,20 @@ test_allow '{"tool_name":"Read","tool_input":{"file_path":"Dockerfile"}}' \
     "Read Dockerfile allowed"
 
 echo ""
-echo "--- Edge cases ---"
-test_block '{"tool_name":"Grep","tool_input":{"pattern":"TODO"}}' \
-    "Grep blocked unconditionally (no file_path needed)" "mcp__codanna__"
-test_block '{"tool_name":"Glob","tool_input":{"pattern":"**/*.md"}}' \
-    "Glob blocked unconditionally (even non-code pattern)" "mcp__codanna__"
-test_block '{"tool_name":"Read","tool_input":{"file_path":"deploy.sh"}}' \
-    "Read .sh blocked (code file)" "mcp__serena__"
+echo "--- Edge cases (v2 behavioral changes) ---"
+# Grep with no file_path → ALLOWED (fail open, no path to check)
+test_allow '{"tool_name":"Grep","tool_input":{"pattern":"TODO"}}' \
+    "Grep no file_path — ALLOWED (fail open)"
+# Glob with non-code pattern → ALLOWED
+test_allow '{"tool_name":"Glob","tool_input":{"pattern":"**/*.md"}}' \
+    "Glob *.md — ALLOWED (not source ext)"
+# Read .sh → ALLOWED (shell scripts allowed)
+test_allow '{"tool_name":"Read","tool_input":{"file_path":"deploy.sh"}}' \
+    "Read .sh — ALLOWED (shell scripts not blocked)"
+# Grep with type=go → DENIED
+test_block '{"tool_name":"Grep","tool_input":{"pattern":"func","type":"go","path":"/Users/ilyabrykau/src"}}' \
+    "Grep type=go under src — DENIED" "codebase-memory-mcp"
+# Bash always allowed
 test_allow '{"tool_name":"Bash","tool_input":{"command":"ls"}}' \
     "Bash always allowed"
 

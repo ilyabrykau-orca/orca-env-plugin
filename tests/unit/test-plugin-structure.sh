@@ -70,25 +70,25 @@ if [ -f "$HOOKS_JSON" ]; then
     fi
 fi
 
-# --- 3. pre-tool-use ---
+# --- 3. dist/claude-toolkit binary ---
 echo ""
-echo "--- hooks/pre-tool-router ---"
+echo "--- dist/claude-toolkit ---"
 
-PRE_TOOL_USE="${PLUGIN_ROOT}/hooks/pre-tool-router"
+BINARY="${PLUGIN_ROOT}/dist/claude-toolkit"
 
-if [ -f "$PRE_TOOL_USE" ]; then
-    echo "  [PASS] pre-tool-use exists"
+if [ -f "$BINARY" ]; then
+    echo "  [PASS] claude-toolkit binary exists"
     passed=$((passed+1))
 else
-    echo "  [FAIL] pre-tool-router missing at $PRE_TOOL_USE"
+    echo "  [FAIL] claude-toolkit binary missing at $BINARY"
     failed=$((failed+1))
 fi
 
-if [ -x "$PRE_TOOL_USE" ]; then
-    echo "  [PASS] pre-tool-use is executable"
+if [ -x "$BINARY" ]; then
+    echo "  [PASS] claude-toolkit binary is executable"
     passed=$((passed+1))
 else
-    echo "  [FAIL] pre-tool-router is not executable"
+    echo "  [FAIL] claude-toolkit binary is not executable"
     failed=$((failed+1))
 fi
 
@@ -104,26 +104,16 @@ if [ -f "$HOOKS_JSON" ]; then
     fi
 fi
 
-# --- 4. session-start ---
-echo ""
-echo "--- hooks/session-start ---"
-
-SESSION_START="${PLUGIN_ROOT}/hooks/session-start"
-
-if [ -f "$SESSION_START" ]; then
-    echo "  [PASS] session-start exists"
-    passed=$((passed+1))
-else
-    echo "  [FAIL] session-start missing at $SESSION_START"
-    failed=$((failed+1))
-fi
-
-if [ -x "$SESSION_START" ]; then
-    echo "  [PASS] session-start is executable"
-    passed=$((passed+1))
-else
-    echo "  [FAIL] session-start is not executable"
-    failed=$((failed+1))
+# Check hooks.json references the binary
+if [ -f "$HOOKS_JSON" ]; then
+    has_binary=$(cat "$HOOKS_JSON" | jq -r '.. | strings | select(contains("claude-toolkit"))' 2>/dev/null | head -1)
+    if [ -n "$has_binary" ]; then
+        echo "  [PASS] hooks.json references claude-toolkit binary"
+        passed=$((passed+1))
+    else
+        echo "  [FAIL] hooks.json does not reference claude-toolkit binary"
+        failed=$((failed+1))
+    fi
 fi
 
 # --- Summary ---
