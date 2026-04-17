@@ -11,12 +11,9 @@ export function handleSessionStart(input: SessionInput): {
   exitCode: number;
 } {
   const cwd = input.cwd ?? process.cwd();
-  const branch = input.gitBranch ?? "";
-
   const project = detectProject(cwd);
   const parts: string[] = [];
 
-  // 1. Project activation
   if (project) {
     parts.push(
       `SERENA WORKSPACE DETECTED: project='${project}' at ${cwd}\n` +
@@ -25,7 +22,11 @@ export function handleSessionStart(input: SessionInput): {
     );
   }
 
-  // 2. Routing table (always injected)
+  const caveman = detectCaveman();
+  if (caveman) {
+    parts.push(`CAVEMAN MODE DETECTED → invoke: /caveman ${caveman}`);
+  }
+
   parts.push(
     `TOOL ROUTING (hooks enforce — violations are hard-blocked):\n` +
     `• Source-code exploration → codebase-memory-mcp: search_code, search_graph, get_code_snippet, trace_path\n` +
@@ -41,16 +42,24 @@ export function handleSessionStart(input: SessionInput): {
 }
 
 function detectProject(cwd: string): string {
-  // Check specific repo dirs first
   for (const [dir, project] of Object.entries(PROJECT_MAP)) {
     if (cwd.includes(`/${dir}`)) return project;
   }
 
-  // Fallback patterns
   if (cwd.includes("/src/orca")) return "orca";
   if (cwd === SRC_PREFIX.slice(0, -1) || cwd + "/" === SRC_PREFIX) {
     return "orca-unified";
   }
 
   return "";
+}
+
+function detectCaveman(): string {
+  const val = (process.env.CAVEMAN_MODE ?? "").toLowerCase();
+  switch (val) {
+    case "ultra": return "ultra";
+    case "full": case "1": case "true": case "active": return "full";
+    case "lite": return "lite";
+    default: return "";
+  }
 }
