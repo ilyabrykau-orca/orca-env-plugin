@@ -1,1 +1,0 @@
-What project are we currently working in? Please activate the Serena workspace for this directory.

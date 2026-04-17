@@ -1,1 +1,0 @@
-Use the Read tool to read orca/base_api/views/assets_view.py and show me the first class you find.
