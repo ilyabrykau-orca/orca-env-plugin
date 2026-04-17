@@ -29,13 +29,17 @@ describe("plugin structure", () => {
     }
   });
 
+  test("skill-rules has no caveman-compress", () => {
+    const rules = JSON.parse(readFileSync(join(PLUGIN_ROOT, "skills", "skill-rules.json"), "utf-8"));
+    expect(rules.skills["caveman-compress"]).toBeUndefined();
+  });
+
   test("agents have no native file tools", () => {
     const agents = ["cbm-explorer.md", "serena-editor.md"];
     const forbidden = ["Bash", "Read", "Grep", "Glob", "Search", "Edit", "Write"];
     for (const agent of agents) {
       const content = readFileSync(join(PLUGIN_ROOT, "agents", agent), "utf-8");
       for (const tool of forbidden) {
-        // Check tools list in YAML frontmatter — match exact tool name not substrings
         const lines = content.split("\n").filter(l => l.trim().startsWith("- "));
         for (const line of lines) {
           expect(line.trim()).not.toBe(`- ${tool}`);

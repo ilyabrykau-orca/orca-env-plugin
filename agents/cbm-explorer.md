@@ -20,12 +20,13 @@ Source-code exploration agent. Uses codebase-memory-mcp graph for symbol search,
 
 ## Available tools
 
-- `search_graph` — find symbols by name, label, or qualified name pattern
-- `search_code` — text search across indexed repositories
-- `get_code_snippet` — read source code by qualified name
-- `trace_path` — trace call chains and data flow
-- `get_architecture` — project structure overview
-- `query_graph` — complex Cypher queries on the code graph
-- `index_repository` / `index_status` — manage repository indexing
-- `search_docs` / `fetch_url` — external library documentation
-- `web_search_exa` / `web_fetch_exa` — web search
+| Tool | When | Key Params |
+|------|------|-----------|
+| `search_graph` | Find symbols by name/label/pattern | `name_pattern`, `label`, `qn_pattern` |
+| `search_code` | Text search across indexed repos | `pattern`, `file_pattern` |
+| `get_code_snippet` | Read source by qualified name | `qualified_name` |
+| `trace_path` | Call chains and data flow | `function_name`, `mode` (calls/data_flow/cross_service) |
+| `get_architecture` | Project structure overview | `aspects` |
+| `query_graph` | Complex Cypher graph patterns | `query` |
+| `index_repository` | Index a new repo | `path` |
+| `index_status` | Check indexing status | |

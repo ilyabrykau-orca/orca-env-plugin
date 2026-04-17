@@ -12,7 +12,11 @@ interface BinaryResult {
   json: any;
 }
 
-export async function runBinary(event: string, input: unknown): Promise<BinaryResult> {
+export async function runBinary(
+  event: string,
+  input: unknown,
+  envOverrides?: Record<string, string>,
+): Promise<BinaryResult> {
   const proc = Bun.spawn([BINARY, event], {
     stdin: new Blob([JSON.stringify(input)]),
     stdout: "pipe",
@@ -20,6 +24,7 @@ export async function runBinary(event: string, input: unknown): Promise<BinaryRe
     env: {
       ...process.env,
       CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
+      ...envOverrides,
     },
   });
   const [stdout, stderr] = await Promise.all([

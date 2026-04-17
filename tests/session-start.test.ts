@@ -44,3 +44,35 @@ describe("session-start", () => {
     expect(r.json.hookSpecificOutput.hookEventName).toBe("SessionStart");
   });
 });
+
+describe("session-start — caveman activation", () => {
+  test("CAVEMAN_MODE=full emits /caveman full", async () => {
+    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "full" });
+    const ctx = contextText(r);
+    expect(ctx).toContain("/caveman full");
+  });
+
+  test("CAVEMAN_MODE=ultra emits /caveman ultra", async () => {
+    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "ultra" });
+    const ctx = contextText(r);
+    expect(ctx).toContain("/caveman ultra");
+  });
+
+  test("CAVEMAN_MODE=lite emits /caveman lite", async () => {
+    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "lite" });
+    const ctx = contextText(r);
+    expect(ctx).toContain("/caveman lite");
+  });
+
+  test("CAVEMAN_MODE=1 maps to full", async () => {
+    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "1" });
+    const ctx = contextText(r);
+    expect(ctx).toContain("/caveman full");
+  });
+
+  test("no CAVEMAN_MODE → no caveman context", async () => {
+    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "" });
+    const ctx = contextText(r);
+    expect(ctx).not.toContain("CAVEMAN");
+  });
+});

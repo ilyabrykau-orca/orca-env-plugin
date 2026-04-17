@@ -71,9 +71,3 @@ export const PROJECT_MAP: Record<string, string> = {
   "grafana-provisioning": "grafana-provisioning",
 };
 
-export const DENY_MSG_EXPLORE =
-  "Use codebase-memory-mcp for source-code exploration: search_code, search_graph, get_code_snippet, trace_path.";
-export const DENY_MSG_EDIT =
-  "Use Serena for source-code edits: replace_symbol_body, replace_content, insert_after_symbol.";
-export const WARN_MSG_REFS =
-  "Call mcp__serena__find_referencing_symbols first to check downstream impact.";

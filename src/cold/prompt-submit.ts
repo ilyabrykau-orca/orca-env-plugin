@@ -42,7 +42,6 @@ export function handlePromptSubmit(input: PromptInput): {
 
     let matched = false;
 
-    // Keyword match
     if (triggers.keywords) {
       for (const kw of triggers.keywords) {
         if (prompt.includes(kw.toLowerCase())) {
@@ -52,7 +51,6 @@ export function handlePromptSubmit(input: PromptInput): {
       }
     }
 
-    // Intent pattern match
     if (!matched && triggers.intentPatterns) {
       for (const pattern of triggers.intentPatterns) {
         try {
@@ -75,7 +73,6 @@ export function handlePromptSubmit(input: PromptInput): {
 
   if (matches.length === 0) return { exitCode: 0 };
 
-  // Build output grouped by priority
   const priorityOrder = ["critical", "high", "medium", "low"];
   const lines: string[] = ["SKILL ACTIVATION CHECK"];
 
