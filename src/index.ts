@@ -1,45 +1,54 @@
-import { readStdin } from "./lib/stdin";
-import { handlePreToolUse } from "./handlers/pre-tool-use";
-import { handleSessionStart } from "./handlers/session-start";
-import { handlePromptSubmit } from "./handlers/prompt-submit";
-import { handlePostToolUse } from "./handlers/post-tool-use";
-import { handleStop } from "./handlers/stop";
+import { readFileSync, writeSync } from "fs";
+import { handlePreToolUse } from "./hot/pre-tool-use";
+import { handleSessionStart } from "./cold/session-start";
+import { handlePromptSubmit } from "./cold/prompt-submit";
+import { handlePostToolUse } from "./cold/post-tool-use";
+import { handleStop } from "./cold/stop";
 
-(async () => {
-  const event = process.argv[2];
-  const input = (await readStdin()) as Record<string, unknown> | null;
+// Read ALL stdin synchronously via fd 0 -- no async overhead
+const raw = readFileSync(0, "utf-8");
+const event = process.argv[2];
 
-  if (!input) {
-    process.exit(0);
-  }
+if (event === "pre-tool-use") {
+  // HOT PATH -- everything sync, zero-alloc, no JSON.parse
+  handlePreToolUse(raw);
+  // handlePreToolUse calls process.exit() internally -- never reaches here
+} else {
+  // COLD PATHS -- async is fine
+  (async () => {
+    let input: any;
+    try { input = JSON.parse(raw); } catch { process.exit(0); }
 
-  let result: { stdout?: string; exitCode: number };
-
-  switch (event) {
-    case "pre-tool-use":
-      result = handlePreToolUse(input as any);
-      break;
-    case "session-start":
-      result = handleSessionStart(input as any);
-      break;
-    case "prompt-submit":
-      result = handlePromptSubmit(input as any);
-      break;
-    case "post-tool-use":
-      result = handlePostToolUse(input as any);
-      break;
-    case "stop":
-      result = await handleStop(input as any, false);
-      break;
-    case "subagent-stop":
-      result = await handleStop(input as any, true);
-      break;
-    default:
-      process.exit(0);
-  }
-
-  if (result.stdout) {
-    process.stdout.write(result.stdout);
-  }
-  process.exit(result.exitCode);
-})();
+    switch (event) {
+      case "session-start": {
+        const r = handleSessionStart(input);
+        if (r.stdout) writeSync(1, r.stdout);
+        process.exit(r.exitCode);
+        break;
+      }
+      case "prompt-submit": {
+        const r = handlePromptSubmit(input);
+        if (r.stdout) writeSync(1, r.stdout);
+        process.exit(r.exitCode);
+        break;
+      }
+      case "post-tool-use": {
+        const r = handlePostToolUse(input);
+        process.exit(r.exitCode);
+        break;
+      }
+      case "stop": {
+        const r = await handleStop(input, false);
+        process.exit(r.exitCode);
+        break;
+      }
+      case "subagent-stop": {
+        const r = await handleStop(input, true);
+        process.exit(r.exitCode);
+        break;
+      }
+      default:
+        process.exit(0);
+    }
+  })();
+}
