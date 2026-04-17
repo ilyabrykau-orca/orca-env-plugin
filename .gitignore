@@ -5,3 +5,7 @@ logs/
 state/
 node_modules/
 *.tmp
+
+# Build artifacts
+dist/
+!dist/claude-toolkit
