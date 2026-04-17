@@ -2,6 +2,7 @@
 # Test helpers for orca-env plugin tests
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BINARY="${PLUGIN_ROOT}/dist/claude-toolkit"
 
 # --- Assertions ---
 
@@ -141,10 +142,24 @@ cleanup_sandbox() {
 
 run_hook_from() {
     local dir="$1"
-    local hook="${2:-$PLUGIN_ROOT/hooks/session-start}"
     (
-        cd "$dir" && bash "$hook" 2>/dev/null
+        cd "$dir" && echo '{}' | "$BINARY" session-start 2>/dev/null
     )
+}
+
+# Run the binary with a given event, piping JSON on stdin
+# Usage: run_binary <event> <json> [env_var=value ...]
+run_binary() {
+    local event="$1"
+    local json="$2"
+    shift 2
+    # remaining args are env var assignments
+    if [ $# -gt 0 ]; then
+        env "$@" sh -c "echo \"\$JSON\" | \"$BINARY\" \"$EVENT\" 2>/dev/null" \
+            JSON="$json" EVENT="$event"
+    else
+        echo "$json" | "$BINARY" "$event" 2>/dev/null
+    fi
 }
 
 run_claude() {
@@ -186,5 +201,7 @@ export -f assert_json_field
 export -f setup_sandbox
 export -f cleanup_sandbox
 export -f run_hook_from
+export -f run_binary
 export -f run_claude
 export PLUGIN_ROOT
+export BINARY
