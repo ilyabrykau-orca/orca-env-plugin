@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "bash build.sh",
-    "typecheck": "bun run --bun tsc --noEmit"
+    "typecheck": "bun run --bun tsc --noEmit",
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "latest",
