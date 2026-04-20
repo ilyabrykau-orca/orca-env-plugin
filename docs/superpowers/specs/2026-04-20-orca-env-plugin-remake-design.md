@@ -157,27 +157,23 @@ Activated by keyword list in `skills/skill-rules.json` (reuses existing shape). 
 - `orca-env-plugin` README documents this as prerequisite.
 - `orca-env-plugin` checks for claude-mem worker on `SessionStart` (HTTP `GET :37777/api/health`). If absent → warn in SessionStart output, degrade gracefully (L2/L3 still work, no memory injection).
 
-### 6.2 Active integration
+### 6.2 Active integration (revised 2026-04-20)
 
-- `SessionStart` hook POSTs to `http://localhost:37777/api/sessions/observations`:
-  ```json
-  {
-    "session_id": "<from hook payload>",
-    "observations": [
-      {"type": "orca.workspace", "value": "<detected project>"},
-      {"type": "orca.cwd", "value": "<pwd>"},
-      {"type": "orca.branch", "value": "<git branch>"}
-    ]
-  }
-  ```
-- `Stop` hook POSTs session summary + blocked tool counts.
-- Result: claude-mem's MCP search tools return orca-tagged observations when Claude asks "what did we do on sensors last week?".
+**Decision:** passive integration only. No orca-specific POSTs from this plugin.
+
+Rationale: claude-mem's `/api/sessions/observations` endpoint has a per-tool-call schema (`claudeSessionId`, `tool_name`, `tool_input`, `tool_response`, `cwd`) fed by claude-mem's own hooks — not the batched `{session_id, observations[]}` we assumed. Rather than force synthetic per-tool-call observations or couple to additional endpoints, we rely on claude-mem's native hook pipeline (it installs its own `PreToolUse`/`PostToolUse`/`Stop` hooks). Our plugin limits claude-mem integration to:
+
+- `SessionStart`: `GET /api/health` probe; warn if worker down (degrade gracefully — L2/L3 still function).
+
+No POSTs from `SessionStart` / `Stop` / anywhere. Workspace detection still runs (appended to SessionStart context for Claude); it just isn't mirrored to claude-mem.
+
+Impact: Task 5 (claude-mem client) keeps only `isHealthy()`; Tasks 8 & 9 drop their POST calls.
 
 ### 6.3 MemPalace removal (clean cut)
 
 - Delete `~/src/mempalace.yaml`.
 - Delete `~/src/entities.json`.
-- Delete `~/src/.codebase-memory/` (if MemPalace-owned — verify before delete).
+- **Do NOT delete `~/src/.codebase-memory/`** — confirmed CBM-owned (Task 0 Step 1).
 - Remove any MemPalace references in plugin source (grep audit pre-merge).
 
 ## 7. Testing Strategy
