@@ -215,10 +215,27 @@ Activated by keyword list in `skills/skill-rules.json` (reuses existing shape). 
 
 ## 9. Open Questions (must resolve before implementation-plan phase)
 
-- [ ] Does `~/src/.codebase-memory/` belong to MemPalace or CBM? **Must verify** before deletion step.
-- [ ] Claude Code subagent hook inheritance — verified works (L2 fires in subagents per current evidence), but pin the test early.
-- [ ] claude-mem `POST /api/sessions/observations` exact schema — fetch from `https://docs.claude-mem.ai` before coding client.
-- [ ] Bun binary cold-start latency on macOS — profile current `dist/claude-toolkit`. If >50ms, plan daemon mode now.
+- [x] Does `~/src/.codebase-memory/` belong to MemPalace or CBM? **Must verify** before deletion step.
+  - **Answer: CBM-owned.** `~/src/.codebase-memory/` contains `adr.md` (23.9K, CBM ADR format, starts with `## PURPOSE` and describes the orca workspace). CBM's `manage_adr(mode='store')` writes here; memory note `reference_codebase_memory_projects.md` explicitly references CBM ADR storage. MemPalace instead uses `~/src/mempalace.yaml` + `~/src/entities.json` + `~/.mempalace/` (per `reference_mempalace_setup.md`). **Do NOT delete `.codebase-memory/` in MemPalace cleanup (§6.3). Update §6.3 accordingly.**
+
+- [x] Claude Code subagent hook inheritance — verified works (L2 fires in subagents per current evidence), but pin the test early.
+  - **Answer: Confirmed by config + prior evidence (live CLI test deferred).** Current `hooks/hooks.json` registers `PreToolUse` with no subagent scope exclusion; Claude Code's plugin hook model fires PreToolUse for every tool call regardless of agent depth. Memory `feedback_use_serena_cbm.md` + prior drift-fix work confirm denials surface in subagents today. Pin live CLI subagent test as part of Task 13 (drift regression integration test) rather than blocking Task 0.
+
+- [x] claude-mem `POST /api/sessions/observations` exact schema — fetch from `https://docs.claude-mem.ai` before coding client.
+  - **Answer: Deviation from our assumption — schema is per-tool-call, not batched.** Actual request body per `docs.claude-mem.ai/platform-integration`:
+    ```json
+    {
+      "claudeSessionId": "abc123",
+      "tool_name": "Bash",
+      "tool_input": { "command": "ls" },
+      "tool_response": { "stdout": "..." },
+      "cwd": "/path/to/project"
+    }
+    ```
+    Response: `{"status": "queued"}` or `{"status": "skipped", "reason": "private"}`. Related endpoints: `POST /api/sessions/summarize` (body: `{claudeSessionId, last_user_message, last_assistant_message}`), `POST /api/sessions/complete` (body: `{claudeSessionId}`), `GET /api/health`. **Update §6.2 to use real schema:** our `SessionStart` POST should instead emit a synthetic observation per orca field (or use `summarize`), and `Stop` hook uses `/api/sessions/summarize` + `/api/sessions/complete`. Task 5 (claude-mem HTTP client) and Task 8 (SessionStart+claude-mem POST) must encode this schema.
+
+- [x] Bun binary cold-start latency on macOS — profile current `dist/claude-toolkit`. If >50ms, plan daemon mode now.
+  - **Answer: ~10ms median on macOS Darwin 25.4 (Apple Silicon).** Five runs of `echo "{}" | ./dist/claude-toolkit pre-tool-use` with `/usr/bin/time -p` all measured `real 0.01s` (resolution 10ms; actual likely 5–10ms). **Well under 50ms threshold. Daemon mode NOT required.** Re-profile post-remake to confirm the new binary (with SQLite audit writer + expanded routing logic) stays <50ms.
 
 ## 10. Success Criteria
 
