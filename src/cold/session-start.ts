@@ -29,11 +29,9 @@ export function handleSessionStart(input: SessionInput): {
 
   parts.push(
     `TOOL ROUTING (hooks enforce — violations are hard-blocked):\n` +
-    `• Source-code exploration → codebase-memory-mcp: search_code, search_graph, get_code_snippet, trace_path\n` +
-    `• Source-code reads → Serena: find_symbol(include_body=True), read_file\n` +
+    `• Source-code exploration/read/search → codebase-memory-mcp: search_code, search_graph, get_code_snippet, trace_path\n` +
     `• Source-code edits → Serena: replace_symbol_body, replace_content, insert_after_symbol\n` +
     `• Docs/config/logs/diffs → native Read/Edit/Write\n` +
-    `• Build/test/git → Bash (RTK auto-rewrites simple commands)\n` +
     `• External docs/web → mcp__docs__search_docs, mcp__exa__web_search_exa`,
   );
 

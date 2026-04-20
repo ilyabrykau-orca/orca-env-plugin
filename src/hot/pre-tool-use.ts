@@ -2,7 +2,7 @@ import { readFileSync, writeSync, appendFileSync, mkdirSync } from "fs";
 import { homedir } from "os";
 
 // ===========================================================================
-// COMPILE-TIME CONSTANTS -- resolved once at module load, zero cost at runtime
+// COMPILE-TIME CONSTANTS
 // ===========================================================================
 
 const HOME = homedir();
@@ -141,7 +141,7 @@ function resolve(p: string): string {
 }
 
 // ===========================================================================
-// SYNC LOGGER -- only called on deny (cold path), never on allow
+// SYNC LOGGER -- only called on deny (cold path)
 // ===========================================================================
 
 let logDirReady = false;
@@ -169,143 +169,119 @@ function hasShellChars(cmd: string): boolean {
 }
 
 // ===========================================================================
-// BASH SOURCE GUARD -- block cat/head/tail/sed/awk on source files
+// BASH SOURCE GUARD -- universal path scan
+// Scan entire cmd for paths under ~/src/. Any source-ext path → deny.
 // ===========================================================================
 
-function isBashReadCmd(word: string): boolean {
-  switch (word) {
-    case "cat": case "head": case "tail": case "less": case "more":
-    case "bat": case "batcat":
-    case "wc": case "grep": case "egrep": case "fgrep": case "rg":
-    case "diff": case "file": case "strings": case "xxd": case "od":
-      return true;
-    default:
-      return false;
-  }
-}
-
-function isBashEditCmd(word: string): boolean {
-  switch (word) {
+function isBashEditWord(w: string): boolean {
+  switch (w) {
     case "sed": case "awk": case "perl": case "ruby":
-    case "rm": case "chmod": case "chown": case "touch":
-    case "cp": case "mv": case "ln":
+    case "python": case "python3": case "node": case "bun": case "deno": case "tsx":
+    case "cp": case "mv": case "rm": case "ln": case "chmod": case "chown":
+    case "touch": case "dd": case "tee":
       return true;
     default:
       return false;
   }
 }
 
-function bashCmdTargetsSource(cmd: string): "read" | "edit" | "" {
-  const parts = cmd.split(/\s+/);
-  if (parts.length < 2) return "";
-  // Skip env var prefixes (FOO=bar BAZ=1 cat file.py)
-  let cmdIdx = 0;
-  while (cmdIdx < parts.length && parts[cmdIdx].indexOf("=") > 0 &&
-         parts[cmdIdx].charCodeAt(0) !== 45 && parts[cmdIdx].charCodeAt(0) !== 47) {
-    cmdIdx++;
-  }
-  if (cmdIdx >= parts.length) return "";
-  if (parts.length - cmdIdx < 2) return "";
-  const bin = baseOf(parts[cmdIdx]);
-  const isRead = isBashReadCmd(bin);
-  const isEdit = isBashEditCmd(bin);
-  if (!isRead && !isEdit) return "";
-  let optsDone = false;
-  for (let i = cmdIdx + 1; i < parts.length; i++) {
-    const arg = parts[i];
-    if (!optsDone) {
-      if (arg === "--") { optsDone = true; continue; }
-      if (arg.charCodeAt(0) === 45) continue;
+function bashHasSourcePath(cmd: string): "read" | "edit" | "" {
+  let firstPathStart = -1;
+  let pos = 0;
+  while (pos < cmd.length) {
+    // Find nearest marker: absolute SRC_PFX or tilde form ~/src/
+    const aIdx = cmd.indexOf(SRC_PFX, pos);
+    const tIdx = cmd.indexOf("~/src/", pos);
+    let start: number;
+    if (aIdx < 0 && tIdx < 0) break;
+    if (aIdx < 0) start = tIdx;
+    else if (tIdx < 0) start = aIdx;
+    else start = aIdx < tIdx ? aIdx : tIdx;
+
+    // Extract path: stop on whitespace/quotes/parens/shell-separators/backslash
+    let end = start;
+    while (end < cmd.length) {
+      const c = cmd.charCodeAt(end);
+      if (c === 32 || c === 9 || c === 10 || c === 13 ||
+          c === 34 || c === 39 || c === 96 ||
+          c === 40 || c === 41 || c === 44 || c === 59 ||
+          c === 124 || c === 38 || c === 60 || c === 62 ||
+          c === 92) break;
+      end++;
     }
-    const abs = resolve(arg);
+    let path = cmd.substring(start, end);
+    // strip trailing punctuation that's unlikely part of a path
+    while (path.length > 0) {
+      const last = path.charCodeAt(path.length - 1);
+      if (last === 58 /* : */ || last === 46 /* . */) path = path.substring(0, path.length - 1);
+      else break;
+    }
+    // Tilde expand
+    if (path.charCodeAt(0) === 126) path = HOME + path.substring(1);
+    const abs = resolve(path);
+    pos = end > pos ? end : pos + 1;
     if (!abs.startsWith(SRC_PFX)) continue;
     if (abs.startsWith(DOT_CLAUDE_PFX)) continue;
+    // Allowed path component
+    let skip = false;
+    for (let i = 0; i < ALLOWED_PATHS.length; i++) {
+      if (abs.indexOf(ALLOWED_PATHS[i]) >= 0) { skip = true; break; }
+    }
+    if (skip) continue;
+    // Allowed filename
+    const base = baseOf(abs);
+    for (let i = 0; i < ALLOWED_NAMES.length; i++) {
+      if (base.startsWith(ALLOWED_NAMES[i])) { skip = true; break; }
+    }
+    if (skip) continue;
     const ext = extOf(abs);
-    if (ext && isSourceExt(ext)) return isEdit ? "edit" : "read";
+    if (!ext) continue;
+    if (isAllowedExt(ext)) continue;
+    if (!isSourceExt(ext)) continue;
+    // First source path found
+    if (firstPathStart < 0) firstPathStart = start;
   }
-  return "";
-}
-
-// Check compound commands: pipes, redirects, chains (&&, ;), tee, embedded paths
-function compoundCmdCheck(cmd: string): "read" | "edit" | "" {
-  // Redirect targets FIRST — writing to source is always an edit
-  const redirectRe = />{1,2}\s+([^\s<|&;]+)/;
-  const redirectMatch = cmd.match(redirectRe);
-  if (redirectMatch) {
-    const target = redirectMatch[1];
-    const clean = target.replace(/^["']|["']$/g, "");
-    const abs = resolve(clean);
-    if (abs.startsWith(SRC_PFX) && !abs.startsWith(DOT_CLAUDE_PFX)) {
-      const ext = extOf(abs);
-      if (ext && isSourceExt(ext)) return "edit";
-    }
-  }
-  // Check each && and ; segment for source access
-  const segments = cmd.split(/\s*(?:&&|;)\s*/);
-  let cdTarget = "";
-  for (const seg of segments) {
-    const trimmed = seg.trim();
-    if (!trimmed) continue;
-    // Track cd target for resolving relative paths in later segments
-    if (trimmed.startsWith("cd ")) {
-      const cdArg = trimmed.substring(3).trim().split(/\s/)[0];
-      cdTarget = cdArg;
-      continue;
-    }
-    // Resolve segment with cd context
-    let segToCheck = trimmed;
-    if (cdTarget && !trimmed.includes(SRC_PFX)) {
-      // Expand relative paths using cd target
-      const parts = trimmed.split(/\s+/);
-      const expanded = parts.map(p => {
-        if (p.charCodeAt(0) === 45) return p;
-        if (p.charCodeAt(0) === 47 || p.charCodeAt(0) === 126) return p;
-        if (p.indexOf("/") >= 0 || p.indexOf(".") >= 0) {
-          const resolved = resolve(cdTarget + "/" + p);
-          if (resolved.startsWith(SRC_PFX)) return resolved;
+  // cd-relative check: cd <src-dir> && <cmd> <relative-file.ext>
+  if (firstPathStart < 0) {
+    const cdMatch = cmd.match(/\bcd\s+(~\/src\/[^\s;&|]+|\/?Users\/[^\s;&|]*\/src\/[^\s;&|]+)/);
+    if (cdMatch) {
+      let cdDir = cdMatch[1];
+      if (cdDir.charCodeAt(0) === 126) cdDir = HOME + cdDir.substring(1);
+      const cdAbs = resolve(cdDir);
+      if (cdAbs.startsWith(SRC_PFX)) {
+        const afterCd = cmd.substring(cmd.indexOf(cdMatch[0]) + cdMatch[0].length);
+        const tokens = afterCd.replace(/^[\s;&|]+/, "").split(/\s+/);
+        for (let ti = 0; ti < tokens.length; ti++) {
+          const tok = tokens[ti];
+          if (tok.startsWith("-")) continue;
+          const te = extOf(tok);
+          if (te && isSourceExt(te) && !isAllowedExt(te)) {
+            firstPathStart = cmd.indexOf(cdMatch[0]);
+            break;
+          }
         }
-        return p;
-      });
-      segToCheck = expanded.join(" ");
-    }
-    // Check pipe within segment
-    const pipeIdx = segToCheck.indexOf("|");
-    if (pipeIdx > 0) {
-      const firstPipe = segToCheck.substring(0, pipeIdx).trim();
-      const result = bashCmdTargetsSource(firstPipe);
-      if (result) return result;
-      const afterPipe = segToCheck.substring(pipeIdx + 1).trim();
-      const teeResult = bashCmdTargetsSource(afterPipe);
-      if (teeResult) return "edit";
-    } else {
-      const result = bashCmdTargetsSource(segToCheck);
-      if (result) return result;
+      }
     }
   }
-  // Scan entire command for embedded source paths
-  return scanForEmbeddedSourcePaths(cmd);
-}
-function scanForEmbeddedSourcePaths(cmd: string): "read" | "edit" | "" {
-  const srcIdx = cmd.indexOf(SRC_PFX);
-  if (srcIdx < 0) return "";
-  // Extract path starting at ~/src/
-  let end = srcIdx;
-  while (end < cmd.length) {
-    const c = cmd.charCodeAt(end);
-    // Stop at whitespace, quotes, parens, commas, semicolons
-    if (c === 32 || c === 9 || c === 34 || c === 39 || c === 41 ||
-        c === 44 || c === 59 || c === 10) break;
-    end++;
-  }
-  const path = cmd.substring(srcIdx, end);
-  if (path.startsWith(DOT_CLAUDE_PFX)) return "";
-  const ext = extOf(path);
-  if (ext && isSourceExt(ext)) return "edit";
-  return "";
+  if (firstPathStart < 0) return "";
+
+  // Read vs edit: check text before first source path
+  const prefix = cmd.substring(0, firstPathStart);
+  if (prefix.indexOf(">") >= 0) return "edit";
+  if (/\btee\b/.test(prefix)) return "edit";
+  // last segment (after &&, ||, ;, |)
+  const segs = prefix.split(/&&|\|\||;|\|/);
+  const lastSeg = segs[segs.length - 1];
+  const parts = lastSeg.trim().split(/\s+/);
+  let idx = 0;
+  while (idx < parts.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(parts[idx])) idx++;
+  const word = parts[idx] ? baseOf(parts[idx]) : "";
+  if (isBashEditWord(word)) return "edit";
+  return "read";
 }
 
 // ===========================================================================
-// SERENA EDIT TOOLS -- check via startsWith for hot inline check
+// SERENA EDIT TOOLS
 // ===========================================================================
 
 const SERENA_EDIT_PREFIXES = [
@@ -325,7 +301,7 @@ function isSerenaEditTool(name: string): boolean {
 }
 
 // ===========================================================================
-// NATIVE FILE TOOLS -- switch for JIT jump table
+// NATIVE FILE TOOLS
 // ===========================================================================
 
 function isNativeFileTool(name: string): boolean {
@@ -339,48 +315,35 @@ function isNativeFileTool(name: string): boolean {
 }
 
 // ===========================================================================
-// MAIN HANDLER -- the hot path
+// MAIN HANDLER
 // ===========================================================================
 
 export function handlePreToolUse(raw: string): void {
   const toolName = extractStr(raw, "tool_name");
   if (!toolName) { process.exit(0); }
 
-  // --- BASH / RTK REWRITE ---
+  // --- BASH ---
   if (toolName === "Bash") {
     const cmd = extractStr(raw, "command");
     if (!cmd) { process.exit(0); }
-    if (process.env.CLAUDE_RAW === "1") {
+    if (process.env.CLAUDE_RAW === "1") { process.exit(0); }
+
+    // Universal path scan: deny any cmd referencing source path under ~/src/
+    const srcHit = bashHasSourcePath(cmd);
+    if (srcHit === "read") {
+      logSync("deny", "Bash", cmd.substring(0, 80), "bash_src_read");
+      writeSync(1, DENY_EXPLORE);
       process.exit(0);
     }
-    if (!hasShellChars(cmd)) {
-      const bashTarget = bashCmdTargetsSource(cmd);
-      if (bashTarget === "read") {
-        logSync("deny", "Bash", cmd.substring(0, 80), "bash_src_read");
-        writeSync(1, DENY_EXPLORE);
-        process.exit(0);
-      }
-      if (bashTarget === "edit") {
-        logSync("deny", "Bash", cmd.substring(0, 80), "bash_src_edit");
-        writeSync(1, DENY_EDIT);
-        process.exit(0);
-      }
-    } else {
-      // Compound command — check first pipe segment + redirect targets
-      const compResult = compoundCmdCheck(cmd);
-      if (compResult === "read") {
-        logSync("deny", "Bash", cmd.substring(0, 80), "bash_compound_read");
-        writeSync(1, DENY_EXPLORE);
-        process.exit(0);
-      }
-      if (compResult === "edit") {
-        logSync("deny", "Bash", cmd.substring(0, 80), "bash_compound_edit");
-        writeSync(1, DENY_EDIT);
-        process.exit(0);
-      }
+    if (srcHit === "edit") {
+      logSync("deny", "Bash", cmd.substring(0, 80), "bash_src_edit");
+      writeSync(1, DENY_EDIT);
       process.exit(0);
     }
-    // RTK rewrite -- only non-sync part, but only for Bash commands
+
+    if (hasShellChars(cmd)) { process.exit(0); }
+
+    // RTK rewrite -- only for simple commands
     try {
       const result = Bun.spawnSync(["rtk", "rewrite", cmd], {
         stdout: "pipe",
@@ -390,7 +353,6 @@ export function handlePreToolUse(raw: string): void {
       const ec = result.exitCode;
 
       if (ec === 0 && rewritten && rewritten !== cmd) {
-        // Need to parse full input to build updatedInput
         const input = JSON.parse(raw);
         const updatedInput = { ...input.tool_input, command: rewritten };
         logSync("rewrite", "Bash", cmd.substring(0, 80), "rtk");
@@ -412,7 +374,6 @@ export function handlePreToolUse(raw: string): void {
           }
         }));
       }
-      // ec 1 or 2 or no rewrite = passthrough = exit 0
     } catch {}
     process.exit(0);
   }
@@ -434,7 +395,7 @@ export function handlePreToolUse(raw: string): void {
           process.exit(0); // refs traced, allow
         }
       }
-    } catch {} // no state file = warn
+    } catch {}
     process.stderr.write(
       `[serena-edit-guard] Editing '${relPath}' without tracing references.\nCall mcp__serena__find_referencing_symbols first to check downstream impact.\n`,
     );
@@ -443,10 +404,9 @@ export function handlePreToolUse(raw: string): void {
 
   // --- NATIVE FILE TOOLS ---
   if (!isNativeFileTool(toolName)) {
-    process.exit(0); // unknown tool, fail open
+    process.exit(0);
   }
 
-  // Tool-aware path extraction: Grep/Glob "pattern" is search text, not file path
   let filePath: string;
   if (toolName === "Grep" || toolName === "Search" || toolName === "Glob") {
     filePath = extractStr(raw, "path") || process.cwd();
@@ -454,58 +414,45 @@ export function handlePreToolUse(raw: string): void {
     filePath = extractStr(raw, "file_path");
   }
 
-  // No path -> fail open (FAST EXIT) -- only for Read/Edit/Write
   if (!filePath) { process.exit(0); }
 
   const abs = resolve(filePath);
 
-  // Allow ~/.claude/ (FAST EXIT)
   if (abs.startsWith(DOT_CLAUDE_PFX)) { process.exit(0); }
 
-  // Allow outside ~/src/ (FAST EXIT) -- exact ~/src match counts as inside
   if (!abs.startsWith(SRC_PFX) && abs !== SRC_PFX.slice(0, -1)) { process.exit(0); }
 
-  // -- Inside ~/src/ -- check extension --
   const ext = extOf(abs);
 
-  // Allowed extension -> FAST EXIT
   if (ext && isAllowedExt(ext)) { process.exit(0); }
 
-  // Allowed filename
   const base = baseOf(abs);
   for (let i = 0; i < ALLOWED_NAMES.length; i++) {
     if (base.startsWith(ALLOWED_NAMES[i])) { process.exit(0); }
   }
 
-  // Allowed path component
   for (let i = 0; i < ALLOWED_PATHS.length; i++) {
     if (abs.indexOf(ALLOWED_PATHS[i]) >= 0) { process.exit(0); }
   }
 
-  // Source extension -> DENY
   if (ext && isSourceExt(ext)) {
     if (toolName === "Edit" || toolName === "Write") {
       logSync("deny", toolName, filePath, "src_edit");
       writeSync(1, DENY_EDIT);
       process.exit(0);
     }
-    // Read, Grep, Glob, Search
     logSync("deny", toolName, filePath, "src_explore");
     writeSync(1, DENY_EXPLORE);
     process.exit(0);
   }
 
-  // Grep/Glob on directories under ~/src without source-ext → deny
-  // (Grep without type/glob will search ALL files including source code)
   if (!ext && abs.startsWith(SRC_PFX) && (toolName === "Grep" || toolName === "Search" || toolName === "Glob")) {
-    // Check if this is a non-exempt directory path (no extension = directory)
     let isExempt = false;
     const absSlash = abs + "/";
     for (let i = 0; i < ALLOWED_PATHS.length; i++) {
       if (abs.indexOf(ALLOWED_PATHS[i]) >= 0 || absSlash.endsWith(ALLOWED_PATHS[i])) { isExempt = true; break; }
     }
     if (!isExempt) {
-      // For Grep, only deny if no type/glob filter that limits to non-source files
       if (toolName === "Grep" || toolName === "Search") {
         const grepType = extractStr(raw, "type");
         const grepGlob = extractStr(raw, "glob");
@@ -515,11 +462,9 @@ export function handlePreToolUse(raw: string): void {
           process.exit(0);
         }
       }
-      // For Glob, fall through to pattern check below
     }
   }
 
-  // Grep/Glob type/glob filter check
   if (toolName === "Grep" || toolName === "Search") {
     const grepType = extractStr(raw, "type");
     if (grepType && isSourceType(grepType)) {
@@ -540,7 +485,6 @@ export function handlePreToolUse(raw: string): void {
   if (toolName === "Glob") {
     const pattern = extractStr(raw, "pattern");
     if (pattern) {
-      // Handle multi-ext: *.{go,py} → check each ext in braces
       const braceMatch = pattern.match(/\.\{([^}]+)\}/);
       if (braceMatch) {
         const exts = braceMatch[1].split(",");
@@ -562,6 +506,5 @@ export function handlePreToolUse(raw: string): void {
     }
   }
 
-  // Unknown -> fail open
   process.exit(0);
 }

@@ -1,7 +1,7 @@
 {
-  "name": "Claude Toolkit Marketplace",
+  "name": "Claude-Toolkit-Marketplace",
   "owner": {
-    "name": "Ilya Brykau",
+    "name": "Ilya Brykau"
   },
   "plugins": [
     {
