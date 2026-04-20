@@ -57,6 +57,7 @@ export const SERENA_EDIT_TOOLS = new Set([
   "mcp__serena__insert_after_symbol",
   "mcp__serena__insert_before_symbol",
   "mcp__serena__rename_symbol",
+  "mcp__serena__safe_delete_symbol",
 ]);
 
 export const NATIVE_FILE_TOOLS = new Set([
@@ -64,7 +65,8 @@ export const NATIVE_FILE_TOOLS = new Set([
 ]);
 
 export const PROJECT_MAP: Record<string, string> = {
-  "orca-cloud-platform": "",
+  "orca-env-plugin": "orca-env-plugin",
+  "orca-cloud-platform": "orca-cloud-platform",
   "orca-runtime-sensor": "orca-runtime-sensor",
   "orca-sensor": "orca-sensor",
   "helm-charts": "helm-charts",

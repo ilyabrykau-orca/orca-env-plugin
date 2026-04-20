@@ -1,6 +1,6 @@
 {
   "name": "claude-toolkit",
-  "version": "2.0.0",
+  "version": "2.2.2",
   "description": "MCP tool routing, native tool enforcement, edit guards, caveman activation, and session analytics for Claude Code",
   "author": {
     "name": "Orca Security"

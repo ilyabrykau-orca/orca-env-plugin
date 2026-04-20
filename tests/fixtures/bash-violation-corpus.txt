@@ -1,0 +1,706 @@
+# Check what Serena projects exist
+echo "=== orca-env-plugin detection ==="
+echo '{"cwd":"/Users/ilyabrykau/src/orca-env-plugin"}' | CLAUDE_PLUGIN_ROOT=/Users/ilyabrykau/src/orca-env-plugin /Users/ily
+# Deeper analysis of the bugs found:
+
+echo "=== BUG 1: Grep without type/glob on src dir ==="
+# This is actually OK-ish: Grep without type/glob will search ALL files including .md/.json
+# Claude Code 
+# Final probe: verify all consensus findings are fixed
+echo "=== Path traversal (FIXED) ==="
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/docs/../views.py"}}' | /Use
+# Merge tdd-round2 into bash-file-ops and clean up
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-round2.test.ts >> /Users/ilyabrykau/src/orca-env-plugin/tests/bash-file-ops.test.ts
+rm /Users/ily
+# Probe extractStr edge cases — nested JSON, escaped quotes, special chars
+for test_case in \
+  '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/views.py","limit":100}}' \
+  
+# Probe: Grep on ~/src/orca dir without type/glob → should this be denied?
+# Currently allows because path has no ext and no type/glob filter
+echo '{"tool_name":"Grep","tool_input":{"path":"/Users/ily
+# Simulate what Claude Code sends when pre-tool-router matcher fires for Bash
+echo '{"tool_name":"Bash","tool_input":{"command":"sed -n '\''1,10p'\'' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http
+# Test C: Grep on .go -> DENY
+printf '{"tool_name":"Grep","tool_input":{"pattern":"func main","path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash /Users/ilyabrykau/.claude/hooks/native-to
+# Test D: Search on .go -> DENY
+printf '{"tool_name":"Search","tool_input":{"pattern":"func main","path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash /Users/ilyabrykau/.claude/hooks/nativ
+# Test E2: Write on .go -> DENY
+printf '{"tool_name":"Write","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go"}}' | bash /Users/ilyabrykau/.claude/hooks/native
+# Test E: Edit on .go -> DENY
+printf '{"tool_name":"Edit","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 2>/de
+# Test current binary against the uncaught patterns
+for cmd in \
+  "wc -l /Users/ilyabrykau/src/orca/views.py" \
+  "cd /Users/ilyabrykau/src/orca && cat views.py" \
+  "CLAUDE_RAW=1 cat /Users/ilyabryk
+# Test serena-hooks remind with a simulated Read tool input
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/foo.go"}}' | serena-hooks remind --c
+# Test the Bash blocking logic in isolation
+test_hook() {
+  local cmd="$1" expect="$2" label="$3"
+  local input="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"$cmd\"}}"
+  result=$(printf '%s' 
+# Test: Read on .py -> DENY
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/scripts/tool.py"}}' | bash /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 2>/dev/nul
+# Test: Read on .ts -> DENY
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-cloud-platform/src/app.ts"}}' | bash /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 
+# Verify the path traversal bug is real
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/docs/../views.py"}}' | /Users/ilyabrykau/src/orca-env-plugin/dist/claude-toolkit
+CLAUDE_RAW=1 cat /Users/ilyabrykau/src/orca-env-plugin/hooks/stop.js
+CLAUDE_RAW=1 cat /Users/ilyabrykau/src/orca-env-plugin/hooks/subagent-stop.js
+CLAUDE_RAW=1 cat /Users/ilyabrykau/src/orca-env-plugin/hooks/utils/transcript-parser.js
+cat -n /Users/ilyabrykau/src/claude-toolkit/src/cold/prompt-submit.ts
+cat -n /Users/ilyabrykau/src/claude-toolkit/src/cold/session-start.ts
+cat -n /Users/ilyabrykau/src/claude-toolkit/tests/helpers.ts
+cat -n /Users/ilyabrykau/src/claude-toolkit/tests/prompt-submit.test.ts
+cat -n /Users/ilyabrykau/src/claude-toolkit/tests/session-start.test.ts
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go | sed -n '254,300p'
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go | sed -n '254,302p'
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go | tail -40
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_metrics.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go | sed -n '230,280p'
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/ssl_test.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_metrics.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/events/ssl_event.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/integration_v2_test.go | head -110
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics.go
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go | head -110
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go | head -220
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go | head -170
+cat -n /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_h2_recovery_test.go
+cat -n /Users/ilyabrykau/src/orca-sensor/services/sensor-management/server/server.go | head -15
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | grep -n "fn num_cpus"
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | grep -n "threads\|build_parallel\|auto_max_depth\|is_wide_search"
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | head -230
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | sed -n '1,60p'
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | sed -n '193,385p'
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | sed -n '250,380p'
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | sed -n '267,350p'
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | sed -n '46,77p'
+cat -n /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | wc -l
+cat -n /Users/ilyabrykau/src/rtk/src/discover/rules.rs | sed -n '260,290p'
+cat -n /Users/ilyabrykau/src/rtk/src/discover/rules.rs | sed -n '655,675p'
+cat -n /Users/ilyabrykau/src/rtk/src/discover/rules.rs | sed -n '700,750p'
+cat /Users/ilyabrykau/src/orca-env-plugin/src/cold/post-tool-use.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/cold/prompt-submit.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/cold/session-start.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/cold/stop.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | grep -n "bashCmdTargets\|isBashRead\|isBashEdit\|CLAUDE_RAW\|hasShellChars\|filePath" | head -30
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | grep -n "function isSourceExt\|function isAllowedExt\|ALLOWED_NAMES\|ALLOWED_PATHS\|function isSourceType" | head -10
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | head -5
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | sed -n '230,290p'
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | sed -n '240,275p'
+cat /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | sed -n '320,415p'
+cat /Users/ilyabrykau/src/orca-env-plugin/src/index.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/lib/constants.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/lib/logger.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/lib/protocol.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/src/lib/state.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/helpers.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/post-tool-use.test.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/pre-tool-use.test.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/prompt-submit.test.ts && cat /Users/ilyabrykau/src/orca-env-plugin/tests/plugin-structure.test.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/session-start.test.ts
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-path-traversal.test.ts >> /Users/ilyabrykau/src/orca-env-plugin/tests/bash-file-ops.test.ts && rm /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-pa
+cat /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-round3.test.ts >> /Users/ilyabrykau/src/orca-env-plugin/tests/bash-file-ops.test.ts && rm /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-round3.tes
+cat /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/pkg/events/ssl_event.go
+cat /Users/ilyabrykau/src/orca-sensor-marketplace/claude-toolkit/src/cold/session-start.ts
+cat /Users/ilyabrykau/src/rtk-pr/rtk/src/hooks/rewrite_cmd.rs
+cat > /Users/ilyabrykau/src/claude-toolkit/src/cold/prompt-submit.ts << 'TYPESCRIPT'
+import { readFileSync } from "fs";
+import { join } from "path";
+import { PLUGIN_ROOT } from "../lib/constants";
+
+co
+cat > /Users/ilyabrykau/src/claude-toolkit/src/cold/session-start.ts << 'TYPESCRIPT'
+import { readFileSync } from "fs";
+import { join } from "path";
+import { PROJECT_MAP, SRC_PREFIX } from "../lib/con
+cat > /Users/ilyabrykau/src/claude-toolkit/tests/prompt-submit.test.ts << 'TYPESCRIPT'
+import { describe, test, expect } from "bun:test";
+import { mkdtempSync, writeFileSync, rmSync } from "fs";
+impor
+cat > /Users/ilyabrykau/src/claude-toolkit/tests/session-start.test.ts << 'TYPESCRIPT'
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { mkdtempSync, writeFileSync, rm
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/constants-sync.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { readFileSync } from "fs";
+import { join } from "path";
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/e2e-session.test.ts << 'TESTEOF'
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { runBinary, isDenied, isAllowed, deny
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/integration-sequences.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, isAllowed, denyReason, con
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/real-session-violations.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, isAllowed, denyReason, S
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-failing.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, denyReason, SRC } from "./helpers";
+
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-lifecycle.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, isAllowed, denyReason, contextText
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-path-traversal.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, denyReason, SRC } from "./hel
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-round2.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, denyReason, SRC } from "./helpers";
+
+
+cat > /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-round3.test.ts << 'TESTEOF'
+import { describe, test, expect } from "bun:test";
+import { runBinary, isDenied, denyReason, isAllowed, SRC } from "./
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go << 'GOEOF'
+package bpfstream
+
+import (
+	"testing"
+
+	"github.com/orcasecurity/
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_metrics.go <<'GO'
+// SPDX-License-Identifier: Apache-2.0
+//
+// SNSR-2574 metrics for the SSL pro
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go << 'GOEOF'
+package bpfstream
+
+import (
+	"bytes"
+	"fmt"
+	"testing"
+
+	"github
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/ssl_test.go << 'GOEOF'
+//go:build linux
+
+package eventsource
+
+import (
+	"os/exec"
+	"runtime"
+	"testing"
+	"time
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/pkg/events/ssl_event_flags_test.go <<'GO'
+package events
+
+import "testing"
+
+func TestSSLEvent_FlagHelpers(t *testing.T) {
+
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_reject_test.go << 'EOF'
+package bpfstream
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestSslRejectMap
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics.go << 'EOF'
+package http
+
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/p
+cat > /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_h2_recovery_test.go << 'GOEOF'
+package http
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestHTTP2_FrameError_F
+cat > /tmp/find_cmd_patch.py << 'PYEOF'
+import re
+
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+# 1. Add imports for parallel walker + sync pri
+cat > /tmp/find_comments.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+content = content.replace(
+    '/// Directories to skip whe
+cat > /tmp/find_dual_path.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+old_block = '''    let effective_depth = auto_max_depth(pa
+cat > /tmp/find_helpers.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+helpers = '''
+fn matches_entry(entry_path: &Path, want_dirs:
+cat > /tmp/find_patch.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+# 1. Add skip-list and auto-depth after imports, before glob_m
+cat > /tmp/find_skipfast.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+# Split skip dirs into single-component (fast name match) a
+cat > /tmp/find_skiplist.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+old_skip = '''const WIDE_SEARCH_SKIP_DIRS: &[&str] = &[
+   
+cat > /tmp/find_unified.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+# Replace the entire walker section (from effective_depth to
+cat > /tmp/fix_bracket.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/discover/rules.rs", "r") as f:
+    content = f.read()
+
+# The old ];  was left before the new rules. Remove it.
+content = c
+cat > /tmp/fix_skip2.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+old = '''const SKIP_NAMES: &[&str] = &[
+    "node_modules", ".c
+cat > /tmp/fix_skip3.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+old = '''const SKIP_NAMES: &[&str] = &[
+    "node_modules", ".c
+cat > /tmp/fix_skipnames.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs", "r") as f:
+    content = f.read()
+
+old = '''const SKIP_NAMES: &[&str] = &[
+    "node_modules",
+cat > /tmp/fix_uv.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/discover/rules.rs", "r") as f:
+    content = f.read()
+
+content = content.replace(
+    r'^uv\s+(sync|run|add|remove|lock|venv|to
+cat > /tmp/main_patch.py << 'PYEOF'
+filepath = "/Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go"
+with open(filepath, 'r') as f:
+    content = f.read()
+
+# 1. Add the enrichment/http import
+old_im
+cat > /tmp/rules_expand.py << 'PYEOF'
+with open("/Users/ilyabrykau/src/rtk/src/discover/rules.rs", "r") as f:
+    content = f.read()
+
+# 1. Expand uv rule
+old_uv = '''    RtkRule {
+        pattern: r"^
+cat > /tmp/ssl_processor_patch.py << 'PYEOF'
+import re
+
+filepath = "/Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go"
+with open(filepath, 'r') as f:
+    content = f.read()
+
+#
+cat > /tmp/test_infrastructure_report.md << 'EOF'
+# Test Infrastructure Report - orca-sensor
+
+## 1. How Tests Are Currently Run
+
+### Makefile Targets
+- **Root level test**: `make test` - Runs all test
+cat >> /Users/ilyabrykau/src/claude-toolkit/tests/prompt-submit.test.ts << 'TYPESCRIPT'
+
+import { mkdtempSync, writeFileSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "o
+cat >> /Users/ilyabrykau/src/orca-env-plugin/tests/integration-sequences.test.ts << 'TESTEOF'
+
+describe("bash guard bypass hardening", () => {
+  test("/bin/cat on source → DENIED (basename extraction)
+cat >> /Users/ilyabrykau/src/orca-env-plugin/tests/integration-sequences.test.ts << 'TESTEOF'
+
+describe("compound command guard — real session violations", () => {
+  describe("pipe reads denied", () =
+cat >> /Users/ilyabrykau/src/orca-env-plugin/tests/integration-sequences.test.ts << 'TESTEOF'
+
+describe("rtk always applied to simple commands", () => {
+  test.each([
+    "git log --oneline",
+    "git
+cd /Users/ilyabrykau && echo '{"tool_name":"Edit","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash ~/.claude/hooks/native-tool-guard.sh 2>&1
+cd /Users/ilyabrykau && echo '{"tool_name":"Grep","tool_input":{"pattern":"func main","path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash ~/.claude/hooks/native-tool-guard.sh 2>&1
+cd /Users/ilyabrykau && echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash ~/.claude/hooks/native-tool-guard.sh 2>&1
+cd /Users/ilyabrykau/src/orca-env-plugin && echo "=== A: One RTK source ===" && grep -c 'Bash' hooks/hooks.json && echo "=== B: One native-tool-guard ===" && grep -c 'pre-tool-use' hooks/hooks.json &&
+echo "=== Empty binary baseline ===" && echo 'console.log("hi")' > /tmp/bench-empty.ts && bun build /tmp/bench-empty.ts --compile --outfile /tmp/bench-empty 2>/dev/null && codesign --remove-signature 
+echo "=== PROBE: bun -e (source edit via bash) ==="
+echo '{"tool_name":"Bash","tool_input":{"command":"bun -e \"require(\\\"fs\\\").writeFileSync(\\\"/Users/ilyabrykau/src/orca/test.py\\\", \\\"pass\\
+echo "=== Quick verify ===" && echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/views.py"}}' | ./dist/claude-toolkit pre-tool-use 2>/dev/null | head -c 80 && echo && ech
+echo "=== TEST FILES ===" && ls -la /Users/ilyabrykau/src/orca-env-plugin/tests/*.test.ts && echo "" && echo "=== GIT CHANGES ===" && git diff --stat && echo "" && echo "=== NEW FILES ===" && git stat
+echo '{"tool_name":"Edit","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/cmd/main.go"}}' | bash ~/src/orca-env-plugin/hooks/native-tool-guard.sh 2>&1; echo "EXIT=$?"
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go"}}' | bash ~/src/orca-env-plugin/hooks/native-tool-guard.sh 2>&1; echo "EXIT=$?"
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | /Users/ilyabrykau/src/orca-env-plugin/dist/claude-toolkit pre-tool-use 2>&1; echo "exit: $?"
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | /Users/ilyabrykau/src/orca-env-plugin/dist/claude-toolkit pre-tool-use; echo "exit: $?"
+echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bun run /Users/ilyabrykau/src/orca-env-plugin/src/index.ts pre-tool-use 2>&1; echo "exit: $?"
+for f in /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_classification_test.go /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_cleanup_test.go /Users/ilyabrykau/src/orca-runti
+grep "DENY_" /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts
+grep "Library" /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs
+grep "WIDE_SEARCH_SKIP_DIRS" /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | head -3
+grep -A 20 "WIDE_SEARCH_SKIP_DIRS" /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs | head -20
+grep -A10 "TOOL ROUTING" /Users/ilyabrykau/src/orca-env-plugin/src/cold/session-start.ts
+grep -E "\.md|\.json|\.yaml|README" /Users/ilyabrykau/src/orca-env-plugin/src/hot/pre-tool-use.ts | head -10
+grep -E "^[[:space:]]+(Seq|StreamId|SkippedCount|Flags|Pad1)[[:space:]]" /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/gen/ebpfssl_arm64_bpfel.go
+grep -E "activate|Serena|refs.traced" /Users/ilyabrykau/src/orca-env-plugin/src/cold/session-start.ts
+grep -c "func Test" /Users/ilyabrykau/src/orca-sensor/services/sensor-management/tests/server/rvm_scan_orchestrator_benchmark_test.go 2>/dev/null || echo "0"
+grep -c 'name:' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+grep -l '//go:build' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/*_test.go 2>/dev/null | head -5; echo "---"; grep -l 'go:build' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/*_test.go 2>/
+grep -n "SSL_EVENT_WRITE\|SSLEventType\|EventType\|const.*=.*1\b" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/events/ssl_event.go
+grep -n "^];" /Users/ilyabrykau/src/rtk/src/discover/rules.rs
+grep -n "^import\|^var\|^const\|^func\|^// " /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl.go | head -20
+grep -n "^static int __always_inline process_ssl_event\|^}" /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/ssl_probe.c | head -10
+grep -n "^var\|^const" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/cloudmetadata/*.go
+grep -n "build_parallel\|parallel\|threads" /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs 2>/dev/null; echo "---"; grep "ignore" /Users/ilyabrykau/src/rtk/Cargo.toml
+grep -n "func Test" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/cloudmetadata/*_test.go | sort
+grep -n "isHTTP1Request determines" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+grep -n "prometheus\|metrics_test" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics_test.go | head -20
+grep -n "t.Setenv" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/cloudmetadata/*_test.go
+grep -n "t.TempDir\|os.MkdirTemp\|os.RemoveAll" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/cloudmetadata/*_test.go | head -20
+grep -n "uv\|python\|uvx" /Users/ilyabrykau/src/rtk/src/discover/rules.rs | head -20
+grep -n "var\|const" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/cloudmetadata/metadata.go | grep -v "^\s*//" | head -20
+grep -n "wide" /Users/ilyabrykau/src/rtk/src/cmds/system/find_cmd.rs
+grep -n 'HTTPProcessorOption' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+grep -n 'IsComplete' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go | head -20
+grep -n 'IsHTTP2' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_assertions_test.go
+grep -n 'RejectConnection' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go
+grep -n 'RejectWriter' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go | head -5
+grep -n 'SkippedCount\|rawOpts' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go | head -20
+grep -n 'SrcIP\|DstIP\|SrcPort\|fillBase\|FromSSL' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/mcp/parser.go | head -30
+grep -n 'SslRejectMap' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/gen/ebpfssl_x86_bpfel.go
+grep -n 'TestApplyEarlyClassification_WritesRejectMap' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go
+grep -n 'TestHTTP2_WaitForMessageStart' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_test.go
+grep -n '^\t}$\|^import\|"bytes"\|PING\|cases\s*:=' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+grep -n 'enrichmenthttp\|enrichment/http' /Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go
+grep -n 'enrichmenthttp\|enrichment/http' /Users/ilyabrykau/src/orca-runtime-sensor/internal/tasks/eventsconsumer.go
+grep -n 'func mkHTTP2' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_builders_test.go
+grep -n 'func.*ProcessSSLEvent\|jsonrpc\|jsonRPC' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+grep -n 'ptrU16\|ptrSkipReason\|WasPrecededBySkip\|SkippedCount\|SkipReason.*\*' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go
+grep -n 'snapshotMetrics\|assertMetricDeltas\|sensor_ssl' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go
+grep -n 'ssl_loss_events_total\|ssl_packets_skipped_total\|ssl_messages_started_total' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_te
+grep -nE "^static int __always_inline process_ssl_event|^}$" /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/ssl_probe.c
+grep -r "DefaultGatherer\|promauto\|prometheus" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/*_test.go /Users/ilyabrykau/src/orca-runtime-sensor/pkg/k8s/*_test.go 2>/dev/null
+grep -r "os\.Setenv\|os\.Environ\|os\.Getenv" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/mapupdater/*_test.go /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/*_test.go /Users/ilyabrykau/src/orca
+grep -rn "index" /Users/ilyabrykau/src/rtk/src/main.rs 2>/dev/null | grep -i "command\|cmd\|Index" | head -10
+head -10 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+head -12 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+head -15 /Users/ilyabrykau/src/orca-sensor/services/sensor-management/server/server.go
+head -150 /Users/ilyabrykau/src/orca-runtime-sensor/pkg/policy/case_insensitive_windows_test.go
+head -20 /Users/ilyabrykau/src/orca-env-plugin/src/handlers/pre-tool-use.ts && echo "---" && head -10 /Users/ilyabrykau/src/orca-env-plugin/src/handlers/session-start.ts && echo "---" && head -10 /Use
+head -20 /Users/ilyabrykau/src/orca-env-plugin/src/lib/stdin.ts
+head -20 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+head -30 /Users/ilyabrykau/src/orca-sensor/services/sensor-management/tests/server/rvm_scan_orchestrator_benchmark_test.go
+ls -la /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/*test*.go
+ls -la /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+ls -la /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go
+ls -lh dist/claude-toolkit && echo "---" && echo '{"tool_name":"Edit","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/base_api/views.py"}}' | ./dist/claude-toolkit pre-tool-use 2>/dev/null
+ls /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go 2>&1
+ls /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/events
+ls /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+ls /Users/ilyabrykau/src/rtk/src/discover/ && echo "---" && head -50 /Users/ilyabrykau/src/rtk/src/discover/mod.rs 2>/dev/null || head -50 /Users/ilyabrykau/src/rtk/src/discover/*.rs 2>/dev/null | hea
+mkdir -p /Users/ilyabrykau/src/orca-env-plugin/src && touch /Users/ilyabrykau/src/orca-env-plugin/src/index.ts
+mv /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-failing.test.ts /Users/ilyabrykau/src/orca-env-plugin/tests/bash-file-ops.test.ts
+mv /Users/ilyabrykau/src/orca-env-plugin/tests/tdd-lifecycle.test.ts /Users/ilyabrykau/src/orca-env-plugin/tests/lifecycle.test.ts && bun test 2>&1
+perl -pi -e 's/\.ProcessHTTP1Data\(([^,]+), ([^,]+), ([^)]+)\)/.ProcessHTTP1Data($1, $2, $3, 0)/g' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_chunk_opt_test.go
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 2>/tmp/ntg-test-stderr-1.txt > /tmp/ntg-
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash -x /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 2>/tmp/ntg-debug.txt > /tmp/ntg-
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash -x /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 2>/tmp/ntg-debug2.txt > /tmp/ntg
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca-sensor/cmd/main.go"}}' | bash /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh 2>/tmp/ntg-test-stderr-2.txt > /tmp
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/pkg/main.py"}}' | bash /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh > /tmp/ntg-py2-stdout.txt 2>/tmp/ntg-py2-s
+printf '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/scripts/tool.py"}}' | bash /Users/ilyabrykau/.claude/hooks/native-tool-guard.sh > /tmp/ntg-py-stdout.txt 2>/tmp/ntg-py
+python3 - <<'EOF'
+# Fix 2a: Remove extra blank lines in processor_v2_test.go before "// --- reject-map writer tests ---"
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go
+python3 - <<'EOF'
+# Fix 2b: Remove extra blank line in protocol.go after cs.lastSeen.Store(time.Now().UnixNano())
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go"
+with open(path
+python3 - <<'EOF'
+# Fix 3: Fix WaitForMessageStart field comment in protocol.go
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go"
+with open(path) as f:
+    content = f.read()
+
+ol
+python3 - <<'EOF'
+# Fix 4: Fix SetRejectWriter docstring in enrichment/http/ssl_processor.go
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go"
+with open(path) as f:
+ 
+python3 - <<'EOF'
+import re
+
+# Fix 1: BuildSslRejectKey in eventsource/bpfstream/probe.go
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/probe.go"
+with open(path) as f:
+    co
+python3 - <<'PYEOF'
+import re
+
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfprobes/ssl_probe.c"
+with open(path, "r") as f:
+    src = f.read()
+
+# ── Change 1: insert ssl_reject_map 
+python3 - <<'PYEOF'
+path = "/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go"
+with open(path, "r") as f:
+    content = f.read()
+
+old_struct = """type BPFSslProbe struct {
+\t*Prob
+python3 - <<'PYEOF'
+path = '/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics.go'
+with open(path, 'r') as f:
+    content = f.read()
+
+old = '''\thttp2FrameErrorsTotal = promauto.NewCounter(
+\t
+python3 - <<'PYEOF'
+path = '/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics_test.go'
+with open(path, 'r') as f:
+    content = f.read()
+
+# 1. Add sslKernelRejectionsTotal.Inc() after http2Fr
+python3 - <<'PYEOF'
+path = '/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go'
+with open(path, 'r') as f:
+    content = f.read()
+
+# Patch 1: applyEarlyClassificationHTTP2 block (line 
+python3 - <<'PYEOF'
+with open("/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/probe.go", "a") as f:
+    f.write("""
+const (
+\tSslRejectMapKeySize    = 16 // sizeof(struct ssl_map_key)
+python3 - <<'PYEOF'
+with open("/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go", "a") as f:
+    f.write("""
+// SetRejectMap sets the BPF map used for kernel-side connection reje
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go').read()
+# Check that old WithLabelValues calls are removed from hot path
+if 'sslMessagesStartedTota
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go').read()
+# Remove the 'net' import line
+content = content.replace('\t\"net\"\\n', '')
+open('/Users/i
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_metrics.go').read()
+
+# Replace the malformed section with the correct structure
+old = '''	})
+
+// Pre-cu
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_metrics.go').read()
+
+# The problem: first var block at line 17 never gets closed
+# The }) at line 41 cl
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_metrics.go').read()
+# The issue: the insert_after_symbol put the new var block inside the existing one
+
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/events/ssl_event.go').read()
+content = content.replace('type type SSLEvent struct', 'type SSLEvent struct')
+open('/Users/ilya
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go').read()
+# Check that the package-level vars exist
+for var in ['jsonModelMarker', 'jsonMessagesMarker', 'jso
+python3 -c "
+content = open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go').read()
+import re
+fn_match = re.search(r'func hasLLMHostOrPath.*?\n\}', content, re.DOTALL)
+if fn_match:
+  
+python3 -c "
+import pathlib
+
+p = pathlib.Path('/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go')
+content = p.read_text()
+
+new_case 
+python3 -c "
+import pathlib
+p = pathlib.Path('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfprobes/ssl_probe.c')
+content = p.read_text()
+
+# 1. Map resize: 65536 -> 16384
+content = content.r
+python3 -c "
+lines = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_metrics.go').readlines()
+for i, line in enumerate(lines, 1):
+    print(f'{i:3}: {line}', end='')
+"
+python3 -c "
+lines = open('/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_metrics.go').readlines()
+for i, line in enumerate(lines[38:55], 39):
+    print(f'{i:3}: {line}', end='')
+
+python3 -c "
+lines = open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/events/ssl_event.go').readlines()
+for i, line in enumerate(lines[:25], 1):
+    print(f'{i:3}: {line}', end='')
+"
+python3 -c "
+path = '/Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfprobes/ssl_probe.c'
+lines = open(path).readlines()
+
+# Change 1: ssl_reject_map definition (should appear around line 193+)
+python3 -c "
+path = '/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go'
+with open(path, 'r') as f:
+    content = f.read()
+# Fix the doubled 'type' keyword
+fixed = content.replace('type ty
+python3 -c "
+with open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics.go', 'r') as f:
+    print(f.read())
+"
+python3 -c "
+with open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/metrics_test.go', 'r') as f:
+    print(f.read())
+"
+python3 -c "
+with open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go', 'r') as f:
+    lines = f.readlines()
+    # Show lines around the two rejectWriter blocks
+    for i, line in
+python3 << 'PYEOF'
+filepath = "/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go"
+
+with open(filepath, 'r') as f:
+    content = f.rea
+python3 << 'PYEOF'
+with open('/Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go', 'r') as f:
+    content = f.read()
+
+# Find the test
+idx = content.find('func TestApplyEarlyClassi
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/ssl_probe.c")
+lines = p.read_text().splitlines(keepends=
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/ssl_probe.c")
+text = p.read_text()
+# Add local ENOSPC de
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/ssl_probe.c")
+text = p.read_text()
+# BPF backend doesn't
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/tls.h")
+text = p.read_text()
+
+# 1. Insert HTTP/2 frame c
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl.go")
+text = p.read_text()
+
+# 1. Package-level rate-l
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl.go")
+text = p.read_text()
+old = """\t\tFamily:      
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test.go")
+text = p.read_text()
+
+# 1. Augment the IPv
+python3 <<'PY'
+from pathlib import Path
+p = Path("/Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/pkg/events/ssl_event.go")
+text = p.read_text()
+
+# 1. Extend the struct definit
+rm -f /Users/ilyabrykau/src/orca-env-plugin/src/lib/headroom.ts /Users/ilyabrykau/src/orca-env-plugin/src/lib/compress.ts
+rm -f /Users/ilyabrykau/src/orca-env-plugin/tests/headroom.test.ts
+rtk rewrite 'cat /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor.go' 2>&1; echo "---exit:$?"
+rtk rewrite 'sed -i "" "s/foo/bar/" /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor.go' 2>&1; echo "---exit:$?"
+sed -i '' 's/\.ProcessHTTP1Data(\([^,]*\), \([^,]*\), \([^)]*\))/\.ProcessHTTP1Data(\1, \2, \3, 0)/g' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol_chunk_opt_test.go
+sed -n '1,15p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfprobes/tls.h && echo ---TAIL--- && tail -10 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/s
+sed -n '1,15p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test_helpers_test.go
+sed -n '1,15p' /Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go
+sed -n '1,20p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/probe.go
+sed -n '1,26p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl.go
+sed -n '115,125p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go
+sed -n '120,135p' /Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go
+sed -n '130,185p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+sed -n '14,22p' /Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go
+sed -n '14,55p' /Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go
+sed -n '140,215p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/gen/ebpfssl_x86_bpfel.go
+sed -n '15,55p' /Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go
+sed -n '185,200p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+sed -n '19,22p' /Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go
+sed -n '190,215p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/probe.go
+sed -n '194,199p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfprobes/ssl_probe.c
+sed -n '204,240p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+sed -n '204,250p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+sed -n '215,220p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+sed -n '25,40p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl.go && echo --- && sed -n '388,400p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktre
+sed -n '269p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+sed -n '280,340p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+sed -n '370,380p' /Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go
+sed -n '375,385p' /Users/ilyabrykau/src/orca-runtime-sensor/cmd/main.go
+sed -n '555,580p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go
+sed -n '595,660p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go
+sed -n '685,710p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go | cat -A
+sed -n '685,710p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go | cat -e
+sed -n '685,730p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go
+sed -n '70,76p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go
+sed -n '73,80p' /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl.go
+sed -n '798,810p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go
+sed -n '88,120p' /Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go
+sed -n '88,145p' /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_test.go
+sed -n '985,1005p' /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go
+tail -30 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+tail -60 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+tail -70 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+tail -70 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go | cat -A | head -20
+tail -80 /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+test -f /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfstream/ssl_reject_test.go && echo "EXISTS" || echo "DELETED"
+time (for i in $(seq 1 100); do echo '{"tool_name":"Read","tool_input":{"file_path":"/Users/ilyabrykau/src/orca/views.py"}}' | ./dist/claude-toolkit pre-tool-use; done)
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/.worktrees/snsr-2574-ebpf-ssl/eventsource/bpfstream/ssl_http_cases_test.go
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/eventsource/bpfprobes/ssl_probe.c
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go /Users/ilyabrykau/src/orca-runtime-sensor/enrichment/http/ssl_processor.go
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2_test.go
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go
+wc -l /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/protocol.go /Users/ilyabrykau/src/orca-runtime-sensor/pkg/http/processor_v2.go /Users/ilyabrykau/src/orca-runtime-sensor/pkg/mcp/parser.go
+wc -l /Users/ilyabrykau/src/rtk-pr/rtk/src/hooks/rewrite_cmd.rs /Users/ilyabrykau/src/rtk-pr/rtk/src/hooks/permissions.rs 2>&1

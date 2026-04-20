@@ -1,0 +1,13 @@
+{
+  "name": "Claude Toolkit Marketplace",
+  "owner": {
+    "name": "Ilya Brykau",
+  },
+  "plugins": [
+    {
+      "name": "claude-toolkit",
+      "source": "./",
+      "description": "Adds wiring between Claude and MCP"
+    }
+  ]
+}

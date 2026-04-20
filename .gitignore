@@ -8,6 +8,5 @@ node_modules/
 
 # Build artifacts
 dist/
-!dist/claude-toolkit
 *.bun-build
 *.js.map
