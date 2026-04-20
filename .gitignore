@@ -1,6 +1,5 @@
 .DS_Store
 .idea/
-.serena/
 logs/
 state/
 node_modules/
@@ -10,3 +9,4 @@ node_modules/
 dist/
 *.bun-build
 *.js.map
+.serena/cache/
