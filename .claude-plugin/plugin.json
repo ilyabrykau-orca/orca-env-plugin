@@ -1,10 +1,10 @@
 {
-  "name": "claude-toolkit",
-  "version": "3.0.0-dev",
-  "description": "MCP tool routing, native tool enforcement, edit guards, caveman activation, and session analytics for Claude Code",
+  "name": "orca-env-plugin",
+  "version": "3.0.0",
+  "description": "Orca-specific Claude Code plugin: MCP routing enforcement, caveman mode, workspace detection, claude-mem integration, session audit.",
   "author": {
     "name": "Orca Security"
   },
-  "homepage": "https://github.com/ilyabrykau-orca/claude-toolkit",
-  "repository": "https://github.com/ilyabrykau-orca/claude-toolkit"
+  "homepage": "https://github.com/ilyabrykau-orca/orca-env-plugin",
+  "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin"
 }

@@ -1,8 +1,10 @@
-# claude-toolkit
+# orca-env-plugin
 
-Claude Code plugin enforcing MCP tool routing for [Codanna](https://github.com/bartolli/codanna) and [Serena](https://github.com/aorwall/serena) codebases.
+Orca-specific Claude Code plugin: MCP routing enforcement, caveman mode persistence, workspace detection, and SQLite session audit. Designed for the `~/src` orca workspace layout.
 
-Blocks native Read/Edit/Grep on code files → routes to MCP alternatives (semantic search, symbolic editing, reference tracking, impact analysis).
+Blocks native Read/Edit/Grep on code files → routes to MCP alternatives ([codebase-memory-mcp](https://github.com/orcasecurity/codebase-memory-mcp) for search, [Serena](https://github.com/oraios/serena) for edits).
+
+Optional: co-install [`claude-mem`](https://github.com/thedotmack/claude-mem) (`npx claude-mem install`) for memory/history search on `:37777`. Plugin degrades gracefully if worker is absent.
 
 ## Routing
 

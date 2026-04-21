@@ -1,13 +1,13 @@
 {
-  "name": "Claude-Toolkit-Marketplace",
+  "name": "Orca-Env-Plugin-Marketplace",
   "owner": {
     "name": "Ilya Brykau"
   },
   "plugins": [
     {
-      "name": "claude-toolkit",
+      "name": "orca-env-plugin",
       "source": "./",
-      "description": "Adds wiring between Claude and MCP"
+      "description": "Orca-specific MCP routing enforcement, caveman mode, workspace detection, session audit."
     }
   ]
 }

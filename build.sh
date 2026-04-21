@@ -10,13 +10,13 @@ bun build src/index.ts \
   --bytecode \
   --sourcemap=inline \
   --target=bun \
-  --outfile dist/claude-toolkit
+  --outfile dist/orca-env-plugin
 
-chmod +x dist/claude-toolkit
+chmod +x dist/orca-env-plugin
 
 # bun 1.3.x produces binaries with an invalid placeholder signature that macOS 15.4+ rejects.
 # Strip and re-sign with ad-hoc identity so the binary executes.
-codesign --remove-signature dist/claude-toolkit 2>/dev/null || true
-codesign --sign - dist/claude-toolkit 2>/dev/null || true
+codesign --remove-signature dist/orca-env-plugin 2>/dev/null || true
+codesign --sign - dist/orca-env-plugin 2>/dev/null || true
 
-echo "Built dist/claude-toolkit ($(wc -c < dist/claude-toolkit | tr -d ' ') bytes)"
+echo "Built dist/orca-env-plugin ($(wc -c < dist/orca-env-plugin | tr -d ' ') bytes)"

@@ -3,34 +3,34 @@
     "PreToolUse": [
       {
         "matcher": "Read|Edit|Write|Grep|Glob|Search|Bash|mcp__serena__(replace_symbol_body|replace_content|insert_after_symbol|insert_before_symbol|rename_symbol|safe_delete_symbol)",
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' pre-tool-use", "timeout": 5 }]
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' pre-tool-use", "timeout": 5 }]
       }
     ],
     "UserPromptSubmit": [
       {
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' user-prompt-submit", "timeout": 5 }]
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' user-prompt-submit", "timeout": 5 }]
       }
     ],
     "SessionStart": [
       {
         "matcher": "startup|resume|clear|compact",
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' session-start", "async": false }]
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' session-start", "async": false }]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "mcp__serena__find_referencing_symbols",
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' post-tool-use", "timeout": 5 }]
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' post-tool-use", "timeout": 5 }]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' stop", "timeout": 30 }]
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' stop", "timeout": 30 }]
       }
     ],
     "SubagentStop": [
       {
-        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/claude-toolkit' subagent-stop", "timeout": 30 }]
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' subagent-stop", "timeout": 30 }]
       }
     ]
   }

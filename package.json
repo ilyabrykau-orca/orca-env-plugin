@@ -1,6 +1,6 @@
 {
-  "name": "claude-toolkit",
-  "version": "2.2.2",
+  "name": "orca-env-plugin",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
