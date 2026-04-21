@@ -91,7 +91,7 @@ export function resolvePath(p: string, cwd: string = process.cwd()): string {
   if (p.charCodeAt(0) === 47) abs = p;
   else if (p.charCodeAt(0) === 126 && p.charCodeAt(1) === 47) abs = HOME + p.substring(1);
   else abs = cwd + "/" + p;
-  if (abs.indexOf("..") >= 0) {
+  if (abs.indexOf("..") >= 0 || abs.indexOf("/./") >= 0 || abs.endsWith("/.")) {
     const parts = abs.split("/");
     const out: string[] = [];
     for (const part of parts) {
