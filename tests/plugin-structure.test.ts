@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { BINARY, PLUGIN_ROOT } from "./helpers";
 import { join } from "path";
 
@@ -35,10 +35,12 @@ describe("plugin structure", () => {
   });
 
   test("agents have no native file tools", () => {
-    const agents = ["cbm-explorer.md", "serena-editor.md"];
+    const agentDir = join(PLUGIN_ROOT, "agents");
+    const agents = readdirSync(agentDir).filter(f => f.endsWith(".md"));
+    expect(agents.length).toBeGreaterThan(0);
     const forbidden = ["Bash", "Read", "Grep", "Glob", "Search", "Edit", "Write"];
     for (const agent of agents) {
-      const content = readFileSync(join(PLUGIN_ROOT, "agents", agent), "utf-8");
+      const content = readFileSync(join(agentDir, agent), "utf-8");
       for (const tool of forbidden) {
         const lines = content.split("\n").filter(l => l.trim().startsWith("- "));
         for (const line of lines) {

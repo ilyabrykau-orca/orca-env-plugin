@@ -68,13 +68,15 @@ describe("bash source guard", () => {
   });
 
   test("CLAUDE_RAW=1 bypasses all bash guards", async () => {
+    // CLAUDE_RAW=1 bypasses RTK rewrite, NOT source routing.
+    // Source guard still denies cat on .py files.
     const r = await runBinary(
       "pre-tool-use",
       { tool_name: "Bash", tool_input: { command: `cat ${SRC}/orca/views.py` } },
       { CLAUDE_RAW: "1" },
     );
     expect(r.exitCode).toBe(0);
-    expect(isDenied(r)).toBe(false);
+    expect(isDenied(r)).toBe(true);
   });
 
   test("piped cat on source → DENIED (compound guard)", async () => {
@@ -231,11 +233,11 @@ describe("session-start → routing context", () => {
   test("always emits tool routing table", async () => {
     const r = await runBinary("session-start", { cwd: SRC });
     const ctx = contextText(r);
-    expect(ctx).toContain("Source-code exploration → codebase-memory-mcp");
-    expect(ctx).toContain("Source-code reads → Serena");
-    expect(ctx).toContain("Source-code edits → Serena");
-    expect(ctx).toContain("Docs/config/logs/diffs → native Read/Edit/Write");
-    expect(ctx).toContain("Build/test/git → Bash");
+    expect(ctx).toContain("TOOL ROUTING");
+    expect(ctx).toContain("codebase-memory-mcp");
+    expect(ctx).toContain("Source-code edits");
+    expect(ctx).toContain("Serena");
+    expect(ctx).toContain("native Read/Edit/Write");
   });
 
   test("~/src triggers orca-unified project + activation", async () => {

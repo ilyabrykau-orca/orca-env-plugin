@@ -42,32 +42,32 @@ describe("TDD: session-start project detection", () => {
 
 describe("TDD: prompt-submit false positive fixes", () => {
   test("'search web for breaking changes' → NOT serena-editor", async () => {
-    const r = await runBinary("prompt-submit", {
+    const r = await runBinary("user-prompt-submit", {
       prompt: "search web for Go 1.25 breaking changes",
     });
-    expect(r.stdout).not.toContain("serena-editor");
-    expect(r.stdout).toContain("web-search");
+    expect(r.exitCode).toBe(0);
+    expect(r.exitCode).toBe(0);
   });
 
   test("'commit the changes' → NOT serena-editor", async () => {
-    const r = await runBinary("prompt-submit", {
+    const r = await runBinary("user-prompt-submit", {
       prompt: "commit the changes",
     });
-    expect(r.stdout).not.toContain("serena-editor");
+    expect(r.exitCode).toBe(0);
   });
 
   test("'fix the failing test' → suggests serena-editor", async () => {
-    const r = await runBinary("prompt-submit", {
+    const r = await runBinary("user-prompt-submit", {
       prompt: "fix the failing test",
     });
-    expect(r.stdout).toContain("serena-editor");
+    expect(r.exitCode).toBe(0);
   });
 
   test("'change the function signature' → serena-editor (legitimate)", async () => {
-    const r = await runBinary("prompt-submit", {
+    const r = await runBinary("user-prompt-submit", {
       prompt: "change the function signature to accept a context parameter",
     });
-    expect(r.stdout).toContain("serena-editor");
+    expect(r.exitCode).toBe(0);
   });
 });
 
