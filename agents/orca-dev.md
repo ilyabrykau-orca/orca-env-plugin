@@ -25,6 +25,10 @@ tools:
   - mcp__docs__fetch_url
   - mcp__exa__web_search_exa
   - mcp__exa__web_fetch_exa
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
+  - TaskGet
 ---
 
 CBM explore → Serena edit. `find_referencing_symbols(name_path=, relative_path=FILE)` before edits.
