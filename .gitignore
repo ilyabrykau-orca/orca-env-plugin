@@ -10,3 +10,5 @@ dist/
 *.bun-build
 *.js.map
 .serena/cache/
+.serena/.gitignore
+.serena/project.local.yml
