@@ -1,0 +1,16 @@
+{
+  "skills": {
+    "orca-dev": {
+      "keywords": [
+        "read", "edit", "write", "refactor", "search code",
+        "find function", "find symbol", "callers", "references",
+        ".go", ".ts", ".tsx", ".py", ".rs",
+        "serena", "codebase-memory", "cbm"
+      ],
+      "path_triggers": [
+        "~/src/orca", "~/src/orca-sensor", "~/src/orca-runtime-sensor",
+        "~/src/orca-cloud-platform", "~/src/orca-env-plugin"
+      ]
+    }
+  }
+}
