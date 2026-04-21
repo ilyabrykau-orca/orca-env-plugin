@@ -18,10 +18,9 @@ export function handleUserPromptSubmit(p: UpsPayload, root: string = DEFAULT_ROO
   return { appendContext: "" };
 }
 
-export async function runUserPromptSubmitCli(): Promise<void> {
-  const stdin = await Bun.stdin.text();
+export function runUserPromptSubmitCli(raw: string): void {
   let payload: UpsPayload = { session_id: "" };
-  try { payload = JSON.parse(stdin) as UpsPayload; } catch {}
+  try { payload = JSON.parse(raw) as UpsPayload; } catch {}
   const r = handleUserPromptSubmit(payload);
   if (r.appendContext) process.stdout.write(r.appendContext);
   process.exit(0);

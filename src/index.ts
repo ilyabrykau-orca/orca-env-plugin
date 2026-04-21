@@ -1,28 +1,36 @@
 import { readFileSync, writeSync } from "fs";
-import { handlePreToolUse } from "./hot/pre-tool-use";
+import { runPreToolUseCli } from "./hot/pre-tool-use";
+import { runUserPromptSubmitCli } from "./hot/user-prompt-submit";
 import { handleSessionStart } from "./cold/session-start";
 import { handlePostToolUse } from "./cold/post-tool-use";
 import { handleStop } from "./cold/stop";
+import { runGainCli } from "./cli/gain";
+
+const event = process.argv[2];
+
+// gain CLI: no stdin needed
+if (event === "gain") {
+  runGainCli();
+  process.exit(0);
+}
 
 // Read ALL stdin synchronously via fd 0 -- no async overhead
 const raw = readFileSync(0, "utf-8");
-const event = process.argv[2];
 
 if (event === "pre-tool-use") {
-  // HOT PATH -- everything sync, zero-alloc, no JSON.parse
-  handlePreToolUse(raw);
-  // handlePreToolUse calls process.exit() internally -- never reaches here
+  runPreToolUseCli(raw);
+} else if (event === "user-prompt-submit") {
+  runUserPromptSubmitCli(raw);
 } else {
-  // COLD PATHS -- async is fine
   (async () => {
     let input: any;
     try { input = JSON.parse(raw); } catch { process.exit(0); }
 
     switch (event) {
       case "session-start": {
-        const r = handleSessionStart(input);
+        const r = await handleSessionStart(input);
         if (r.stdout) writeSync(1, r.stdout);
-        process.exit(r.exitCode);
+        process.exit(r.exitCode ?? 0);
         break;
       }
       case "post-tool-use": {
