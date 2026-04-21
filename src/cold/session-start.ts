@@ -13,6 +13,7 @@ export type SessionStartOpts = { memBase?: string };
 export type SessionStartResult = { appendContext: string; exitCode?: number; stdout?: string };
 
 function detectProject(cwd: string): string {
+  if (!cwd) return "";
   for (const [dir, project] of Object.entries(PROJECT_MAP)) {
     if (cwd.includes(`/${dir}`)) return project;
   }
