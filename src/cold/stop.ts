@@ -1,6 +1,7 @@
 import { createReadStream, existsSync, appendFileSync, writeFileSync, mkdirSync } from "fs";
 import { createInterface } from "readline";
 import { join } from "path";
+import { blockRate, topDenies, DEFAULT_DB, type DenyRow } from "../lib/audit";
 
 interface StopInput {
   transcript_path?: string;
@@ -29,6 +30,13 @@ interface Stats {
   cwd?: string;
   git_branch?: string;
   analyzed_at?: string;
+  audit?: { blockRate: number; topDenies: DenyRow[] };
+}
+
+export type AuditSummary = { blockRate: number; topDenies: DenyRow[] };
+
+export function auditSummary(dbPath: string = DEFAULT_DB): AuditSummary {
+  return { blockRate: blockRate(dbPath), topDenies: topDenies(3, dbPath) };
 }
 
 export async function handleStop(
@@ -49,6 +57,7 @@ export async function handleStop(
   stats.cwd = input.cwd;
   stats.git_branch = input.gitBranch;
   stats.analyzed_at = new Date().toISOString();
+  stats.audit = auditSummary();
 
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
   const statsDir = join(projectDir, "logs", "stats");
@@ -64,12 +73,14 @@ export async function handleStop(
   writeFileSync(join(statsDir, latestName), JSON.stringify(stats, null, 2));
 
   const t = stats.tokens;
+  const a = stats.audit;
   process.stderr.write(
     `\n ${isSubagent ? "Subagent " : ""}Session Statistics:\n` +
     `   Tokens: ${t.total.toLocaleString()} (${t.input.toLocaleString()} in, ${t.output.toLocaleString()} out)\n` +
     `   Cache: ${t.cache_read.toLocaleString()} read, ${t.cache_creation.toLocaleString()} created\n` +
     `   Tools: ${Object.keys(stats.tools).length} types, ${Object.values(stats.tools).reduce((a, b) => a + b, 0)} total uses\n` +
     `   Duration: ${stats.duration_seconds ?? 0}s\n` +
+    `   Block rate: ${(a.blockRate * 100).toFixed(1)}%\n` +
     `   Saved to: ${logPath}\n\n`,
   );
 
