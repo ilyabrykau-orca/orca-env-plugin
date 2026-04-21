@@ -14,7 +14,7 @@ describe("plugin structure", () => {
     for (const event of events) {
       expect(hooks.hooks[event]).toBeDefined();
       const cmd = hooks.hooks[event][0].hooks[0].command;
-      expect(cmd).toContain("claude-toolkit");
+      expect(cmd).toContain("orca-env-plugin");
     }
   });
 

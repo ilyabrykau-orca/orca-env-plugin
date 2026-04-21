@@ -109,7 +109,8 @@ function isAllowedName(base: string): boolean {
 }
 
 function isAllowedPathComponent(abs: string): boolean {
-  for (const c of ALLOWED_PATHS) if (abs.indexOf(c) >= 0) return true;
+  const normalized = abs.endsWith("/") ? abs : abs + "/";
+  for (const c of ALLOWED_PATHS) if (normalized.indexOf(c) >= 0) return true;
   return false;
 }
 

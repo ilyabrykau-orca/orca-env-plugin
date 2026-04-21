@@ -76,7 +76,7 @@ describe("native-tool-guard", () => {
     });
 
     test("bad JSON input → exit 0", async () => {
-      const proc = Bun.spawn([`${PLUGIN_ROOT}/dist/claude-toolkit`, "pre-tool-use"], {
+      const proc = Bun.spawn([`${PLUGIN_ROOT}/dist/orca-env-plugin`, "pre-tool-use"], {
         stdin: new Blob(["not-json"]),
         stdout: "pipe",
         env: { ...process.env, CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT },

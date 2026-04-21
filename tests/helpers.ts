@@ -1,7 +1,7 @@
 import { join } from "path";
 
 export const PLUGIN_ROOT = join(import.meta.dir, "..");
-export const BINARY = join(PLUGIN_ROOT, "dist", "claude-toolkit");
+export const BINARY = join(PLUGIN_ROOT, "dist", "orca-env-plugin");
 export const HOME = process.env.HOME!;
 export const SRC = `${HOME}/src`;
 

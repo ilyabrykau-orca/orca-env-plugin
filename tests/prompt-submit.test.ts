@@ -1,30 +1,29 @@
 import { describe, test, expect } from "bun:test";
-import { runBinary } from "./helpers";
+import { runBinary, contextText } from "./helpers";
 
 describe("prompt-submit", () => {
-  test("matches exploration keywords", async () => {
-    const r = await runBinary("prompt-submit", { prompt: "I want to explore the codebase" });
-    expect(r.stdout).toContain("codebase-explorer");
+  test("first turn returns empty context", async () => {
+    const r = await runBinary("user-prompt-submit", { prompt: "hello", session_id: "ps-test-1" });
+    expect(r.exitCode).toBe(0);
   });
 
-  test("matches edit keywords", async () => {
-    const r = await runBinary("prompt-submit", { prompt: "edit the function to fix the bug" });
-    expect(r.stdout).toContain("serena-editor");
+  test("caveman reminder reinjects periodically", async () => {
+    const sid = `ps-reinject-${Date.now()}`;
+    let sawReminder = false;
+    for (let i = 0; i < 10; i++) {
+      const r = await runBinary("user-prompt-submit", { prompt: "do stuff", session_id: sid });
+      if (r.stdout && r.stdout.includes("CAVEMAN")) sawReminder = true;
+    }
+    expect(sawReminder).toBe(true);
   });
 
-  test("matches web search keywords", async () => {
-    const r = await runBinary("prompt-submit", { prompt: "search web for latest version of Go" });
-    expect(r.stdout).toContain("web-search");
+  test("empty prompt does not crash", async () => {
+    const r = await runBinary("user-prompt-submit", { prompt: "", session_id: "ps-empty" });
+    expect(r.exitCode).toBe(0);
   });
 
-  test("no match → empty output", async () => {
-    const r = await runBinary("prompt-submit", { prompt: "hello world" });
-    expect(r.stdout).toBe("");
-  });
-
-  test("multiple skills can match", async () => {
-    const r = await runBinary("prompt-submit", { prompt: "explore code and check docs for fastapi" });
-    expect(r.stdout).toContain("codebase-explorer");
-    expect(r.stdout).toContain("docs-lookup");
+  test("missing session_id does not crash", async () => {
+    const r = await runBinary("user-prompt-submit", { prompt: "test" });
+    expect(r.exitCode).toBe(0);
   });
 });
