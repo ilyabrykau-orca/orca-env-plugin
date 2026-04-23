@@ -310,6 +310,29 @@ export function decide(call: ToolCall, cwd: string = process.cwd()): Decision {
     return { allow: true, reason: "bash passthrough" };
   }
 
+  // ctx_execute_file(path) on source file → use CBM get_code_snippet instead
+  if (tool.endsWith("__ctx_execute_file")) {
+    const path = String(args.path ?? "");
+    if (path) {
+      const abs = resolvePath(path, cwd);
+      const info = isSourceCodePath(abs);
+      if (!info.exempt && info.code) return { allow: false, reason: HINT_CBM_SEARCH };
+    }
+    return { allow: true, reason: "ctx passthrough" };
+  }
+
+  // ctx_execute(shell/bash) with source file in command → use CBM get_code_snippet instead
+  if (tool.endsWith("__ctx_execute")) {
+    const lang = String(args.language ?? "");
+    const code = String(args.code ?? "");
+    if (lang === "shell" || lang === "bash") {
+      const hit = bashSourceHit(code, cwd);
+      if (hit === "read") return { allow: false, reason: HINT_CBM_SEARCH };
+      if (hit === "edit") return { allow: false, reason: HINT_SERENA_EDIT };
+    }
+    return { allow: true, reason: "ctx passthrough" };
+  }
+
   return { allow: true, reason: "no rule" };
 }
 
