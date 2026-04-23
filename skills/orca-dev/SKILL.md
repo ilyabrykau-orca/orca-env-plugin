@@ -16,15 +16,19 @@ Activate via `mcp__serena__activate_project(project=<name>)` when switching.
 
 ## Tool boundaries (hard rules)
 
-| Intent              | Use                                                                     | Never                       |
-|---------------------|-------------------------------------------------------------------------|-----------------------------|
-| Search code         | `mcp__codebase-memory-mcp__search_code`, `search_graph`                 | native `Grep`, `Glob`       |
-| Read a symbol body  | `mcp__codebase-memory-mcp__get_code_snippet`                            | native `Read` on `.go/.ts`  |
-| Trace call chain    | `mcp__codebase-memory-mcp__trace_path`                                  | manual grep                 |
-| Edit a symbol       | `mcp__serena__replace_symbol_body`, `replace_content`                   | native `Edit`, `Write`      |
-| Find callers        | `mcp__serena__find_referencing_symbols`                                 | manual grep                 |
-| External docs       | `mcp__docs__search_docs`, `mcp__docs__fetch_url`                        | —                           |
-| Web                 | `mcp__exa__web_search_exa`, `mcp__exa__web_fetch_exa`                   | —                           |
+**Any source code exploration, search, navigation, or read = CBM only.**
+Serena is write-only (plus `find_referencing_symbols` immediately before an edit).
+
+| Intent                        | Use                                                            | Never                                                            |
+|-------------------------------|----------------------------------------------------------------|------------------------------------------------------------------|
+| Search / grep code            | `mcp__codebase-memory-mcp__search_code`                        | native `Grep`, `Glob`, `mcp__serena__search_for_pattern`         |
+| Find symbol / list symbols    | `mcp__codebase-memory-mcp__search_graph`                       | `mcp__serena__find_symbol`, `mcp__serena__get_symbols_overview`  |
+| Read a symbol body            | `mcp__codebase-memory-mcp__get_code_snippet`                   | `mcp__serena__read_file`, native `Read` on source                |
+| Trace call chain              | `mcp__codebase-memory-mcp__trace_path`                         | manual grep                                                      |
+| Find callers (pre-edit only)  | `mcp__serena__find_referencing_symbols`                        | —                                                                |
+| Edit a symbol                 | `mcp__serena__replace_symbol_body`, `replace_content`          | native `Edit`, `Write`                                           |
+| External docs                 | `mcp__docs__search_docs`, `mcp__docs__fetch_url`               | —                                                                |
+| Web                           | `mcp__exa__web_search_exa`, `mcp__exa__web_fetch_exa`          | —                                                                |
 
 ## Edit protocol
 
@@ -38,6 +42,15 @@ Activate via `mcp__serena__activate_project(project=<name>)` when switching.
 - `search_graph` → find qualified name → `get_code_snippet(qualified_name=...)`.
 - `search_code(pattern, project)` for text hits ranked by structural importance.
 - `path_filter` regex narrows scope (e.g. `^src/`).
+
+## Parallelism — MANDATORY
+
+Fire **all independent CBM reads in one message** (multiple tool calls). Never serialize round-trips that have no data dependency.
+
+Must be parallel in a single message:
+- Multiple `search_code` / `get_code_snippet` for different symbols
+- `search_code` + `trace_path` when neither depends on the other's result
+- Any combination of CBM reads that don't feed each other
 
 ## Project names (CBM index)
 

@@ -12,7 +12,7 @@
 
 | Task | Use | Never |
 |------|-----|-------|
-| Explore / read source code (`.go .ts .py .c .h`) | **CBM** | Read / Glob / Grep / Bash cat / Serena read |
+| Explore / read / search / navigate source code (`.go .ts .py .c .h`) | **CBM** | Read / Glob / Grep / Bash / any `mcp__serena__` read tool |
 | Write source code | **Serena** — `find_referencing_symbols` first (traces impact), same turn | Edit / Write / sed |
 | Non-source research / shell output | **CTX** | Bash >20 lines |
 | Read non-source to then Edit | native `Read` | — |
@@ -26,6 +26,7 @@ When you need to analyze, count, filter, or transform data: **write code** via C
 
 - **Serena edits**: call `find_referencing_symbols` in the same turn before any write — hook blocks edits without it.
 - **CBM / CTX**: consult tool descriptions; pick the tool that fits the task, not the default.
+- **Parallelism**: fire all independent CBM reads in a single message — multiple tool calls with no data dependency must never be serialized.
 - **CTX `ctx_batch_execute`**: provide descriptive `label` per command — labels become FTS5 search chunks.
 - **Bash**: only for `git`, `mkdir`, `rm`, `mv`, short-output navigation.
 
