@@ -21,6 +21,15 @@
       {
         "matcher": "mcp__serena__find_referencing_symbols",
         "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' post-tool-use", "timeout": 5 }]
+      },
+      {
+        "matcher": "Bash|Read|Write|Edit|NotebookEdit|Glob|Grep|TaskCreate|TaskUpdate|EnterPlanMode|ExitPlanMode|Skill|Agent|AskUserQuestion|mcp__",
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' post-tool-use-capture", "timeout": 10 }]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [{ "type": "command", "command": "'${CLAUDE_PLUGIN_ROOT}/dist/orca-env-plugin' pre-compact", "timeout": 15 }]
       }
     ],
     "Stop": [

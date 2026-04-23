@@ -64,6 +64,20 @@ const BASH_EDIT_WORDS = new Set([
   "touch", "dd", "tee",
 ]);
 
+const BASH_READ_WORDS = new Set([
+  "cat", "head", "tail", "less", "more", "bat",
+  "grep", "rg", "ag", "ack",
+  "wc", "nl", "strings", "hexdump",
+  "diff", "comm", "cmp",
+]);
+
+// Runtimes/build tools that appear in BASH_EDIT_WORDS but are safe in cd+source context
+// (e.g. `cd src && bun test foo.test.ts` is a test runner, not a file editor)
+const CD_SAFE_VERBS = new Set([
+  "bun", "node", "deno", "tsx",
+  "python", "python3", "ruby",
+]);
+
 // Deny reasons (HINT_* retained for public API compat)
 export const HINT_CBM_SEARCH = "Use codebase-memory-mcp for source-code exploration: search_code, search_graph, get_code_snippet, trace_path.";
 export const HINT_SERENA_EDIT = "Use Serena for source-code edits: replace_symbol_body, replace_content, insert_after_symbol.";
@@ -168,20 +182,30 @@ function bashSourceHit(cmd: string, cwd: string): "read" | "edit" | "" {
   }
 
   if (firstPathStart < 0) {
-    const cdMatch = cmd.match(/\bcd\s+(~\/src\/[^\s;&|]+|\/?Users\/[^\s;&|]*\/src\/[^\s;&|]+)/);
+    const cdMatch = cmd.match(/\bcd\s+(~\/src\/[^\s;&|]+|\/?\/?Users\/[^\s;&|]*\/src\/[^\s;&|]+)/);
     if (cdMatch) {
       let cdDir = cdMatch[1];
       if (cdDir.charCodeAt(0) === 126) cdDir = HOME + cdDir.substring(1);
       const cdAbs = resolvePath(cdDir, cwd);
       if (cdAbs.startsWith(SRC_PFX)) {
         const afterCd = cmd.substring(cmd.indexOf(cdMatch[0]) + cdMatch[0].length);
-        const tokens = afterCd.replace(/^[\s;&|]+/, "").split(/\s+/);
-        for (const tok of tokens) {
-          if (tok.startsWith("-")) continue;
-          const te = extOf(tok);
-          if (te && SOURCE_EXTS.has(te) && !ALLOWED_EXTS.has(te)) {
-            firstPathStart = cmd.indexOf(cdMatch[0]);
-            break;
+        const stripped = afterCd.replace(/^[\s;&|]+/, "");
+        const tokens = stripped.split(/\s+/);
+        // Find the command verb (skip env var assignments)
+        let verbIdx = 0;
+        while (verbIdx < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[verbIdx])) verbIdx++;
+        const verb = tokens[verbIdx] ? baseOf(tokens[verbIdx]) : "";
+        // Only flag when verb is a known file reader or editor (excludes runtimes like bun/go/python)
+        const isFileCmd = BASH_READ_WORDS.has(verb) ||
+          (BASH_EDIT_WORDS.has(verb) && !CD_SAFE_VERBS.has(verb));
+        if (isFileCmd) {
+          for (const tok of tokens) {
+            if (tok.startsWith("-")) continue;
+            const te = extOf(tok);
+            if (te && SOURCE_EXTS.has(te) && !ALLOWED_EXTS.has(te)) {
+              firstPathStart = cmd.indexOf(cdMatch[0]);
+              break;
+            }
           }
         }
       }

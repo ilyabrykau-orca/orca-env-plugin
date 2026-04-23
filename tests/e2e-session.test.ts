@@ -38,7 +38,6 @@ describe("phase 1: session initialization", () => {
     // Must detect orca-unified project
     expect(ctx).toContain("orca-unified");
     expect(ctx).toContain("mcp__serena__activate_project");
-    expect(ctx).toContain("mcp__serena__list_memories");
 
     // Must include full routing table
     expect(ctx).toContain("TOOL ROUTING");

@@ -40,6 +40,38 @@ describe("Bash cd+source detection", () => {
     const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca && sed source.go" } }, "/tmp");
     expect(r.allow).toBe(false);
   });
+  test("cd to src subdir && bun test foo.test.ts -> allowed (test runner)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca-env-plugin && bun test tests/session-start.test.ts" } }, "/tmp");
+    expect(r.allow).toBe(true);
+  });
+  test("cd to src subdir && go test ./... -> allowed (test runner)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca-sensor && go test ./..." } }, "/tmp");
+    expect(r.allow).toBe(true);
+  });
+  test("cd to src subdir && make build -> allowed (build tool)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca && make build" } }, "/tmp");
+    expect(r.allow).toBe(true);
+  });
+  test("cd to src subdir && npm test -> allowed (test runner)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca && npm test" } }, "/tmp");
+    expect(r.allow).toBe(true);
+  });
+  test("cd to src subdir && cargo test -> allowed (test runner)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/rtk && cargo test" } }, "/tmp");
+    expect(r.allow).toBe(true);
+  });
+  test("cd to src subdir && grep func views.py -> denied (file reader)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca && grep func views.py" } }, "/tmp");
+    expect(r.allow).toBe(false);
+  });
+  test("cd to src subdir && wc -l views.py -> denied (file reader)", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca && wc -l views.py" } }, "/tmp");
+    expect(r.allow).toBe(false);
+  });
+  test("cd to src subdir && bun test with pipe and tail -> allowed", () => {
+    const r = decide({ tool: "Bash", args: { command: "cd " + SRC + "/orca-env-plugin && bun test tests/foo.test.ts 2>&1 | tail -20" } }, "/tmp");
+    expect(r.allow).toBe(true);
+  });
 });
 
 describe("Grep/Glob on src subdirs", () => {

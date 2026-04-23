@@ -5,6 +5,7 @@ import { handleSessionStart } from "./cold/session-start";
 import { handlePostToolUse } from "./cold/post-tool-use";
 import { handleStop } from "./cold/stop";
 import { runGainCli } from "./cli/gain";
+import { delegateContextMode } from "./lib/ctx-delegate";
 
 const event = process.argv[2];
 
@@ -36,6 +37,14 @@ if (event === "pre-tool-use") {
       case "post-tool-use": {
         const r = handlePostToolUse(input);
         process.exit(r.exitCode);
+        break;
+      }
+      case "post-tool-use-capture": {
+        process.exit(delegateContextMode("posttooluse.mjs", raw));
+        break;
+      }
+      case "pre-compact": {
+        process.exit(delegateContextMode("precompact.mjs", raw));
         break;
       }
       case "stop": {

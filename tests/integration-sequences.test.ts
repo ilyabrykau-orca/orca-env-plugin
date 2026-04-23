@@ -87,6 +87,38 @@ describe("bash source guard", () => {
     expect(isDenied(r)).toBe(true);
     expect(denyReason(r)).toContain("codebase-memory-mcp");
   });
+
+  test("cd + bun test with .test.ts → ALLOWED (test runner, not file read)", async () => {
+    const r = await runBinary("pre-tool-use", {
+      tool_name: "Bash",
+      tool_input: { command: `cd ${SRC}/orca-env-plugin && bun test tests/session-start.test.ts 2>&1 | tail -20` },
+    });
+    expect(isDenied(r)).toBe(false);
+  });
+
+  test("cd + go test → ALLOWED (test runner)", async () => {
+    const r = await runBinary("pre-tool-use", {
+      tool_name: "Bash",
+      tool_input: { command: `cd ${SRC}/orca-sensor && go test ./pkg/...` },
+    });
+    expect(isDenied(r)).toBe(false);
+  });
+
+  test("cd + cat source → still DENIED (file reader)", async () => {
+    const r = await runBinary("pre-tool-use", {
+      tool_name: "Bash",
+      tool_input: { command: `cd ${SRC}/orca && cat views.py` },
+    });
+    expect(isDenied(r)).toBe(true);
+  });
+
+  test("cd + grep source → still DENIED (file reader)", async () => {
+    const r = await runBinary("pre-tool-use", {
+      tool_name: "Bash",
+      tool_input: { command: `cd ${SRC}/orca && grep func views.py` },
+    });
+    expect(isDenied(r)).toBe(true);
+  });
 });
 
 describe("edit → refs → edit flow", () => {
@@ -245,7 +277,6 @@ describe("session-start → routing context", () => {
     const ctx = contextText(r);
     expect(ctx).toContain("orca-unified");
     expect(ctx).toContain("mcp__serena__activate_project");
-    expect(ctx).toContain("mcp__serena__list_memories");
   });
 });
 

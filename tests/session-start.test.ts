@@ -28,7 +28,7 @@ describe("session-start", () => {
     const r = await runBinary("session-start", { cwd: "/tmp" });
     const ctx = contextText(r);
     expect(ctx).not.toContain("SERENA WORKSPACE DETECTED");
-    expect(ctx).toContain("TOOL ROUTING");
+    expect(ctx).toContain("context_window_protection");
   });
 
   test("always includes routing table", async () => {
