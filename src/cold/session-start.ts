@@ -29,24 +29,10 @@ const CONTEXT_WINDOW_PROTECTION = `<context_window_protection>
   </priority_instructions>
 
   <tool_aliases>
-    CBM          = mcp__codebase-memory-mcp__*
-                   Pick the right tool for the task — do not default to one.
-                   search_code (text/regex), search_graph (structural), get_code_snippet (read symbol/range),
-                   trace_path (call chains), get_architecture (high-level map), query_graph (Cypher),
-                   index_repository, detect_changes, get_graph_schema, manage_adr, ingest_traces.
-
-    Serena READ  = mcp__serena__find_symbol, get_symbols_overview, read_file,
-                   find_referencing_symbols, search_for_pattern, find_file, list_dir
-                   (no guard — use freely for exploration and reading)
-
-    Serena WRITE = mcp__serena__replace_symbol_body, replace_content, insert_after_symbol,
-                   insert_before_symbol, rename_symbol, safe_delete_symbol
-                   ⚠ MUST call find_referencing_symbols BEFORE any WRITE in the same turn.
-
-    CTX          = mcp__plugin_context-mode_context-mode__*
-                   Pick the right tool for the task.
-                   ctx_batch_execute (primary — runs commands, auto-indexes, searches in one call),
-                   ctx_search, ctx_execute, ctx_execute_file, ctx_fetch_and_index, ctx_index.
+    CBM    = mcp__codebase-memory-mcp__*           Source code exploration AND reading. Consult tool descriptions.
+    Serena = mcp__serena__*                        Source code WRITE only.
+             ⚠ Before any write: call find_referencing_symbols to trace what the edit breaks.
+    CTX    = mcp__plugin_context-mode_context-mode__*  Non-source research, shell, web, compute. Consult tool descriptions.
   </tool_aliases>
 
   <routing_rules>
@@ -110,10 +96,9 @@ export async function handleSessionStart(
 
   parts.push(
     `TOOL ROUTING (hooks enforce — violations are hard-blocked):\n` +
-    `• Source code explore  → CBM (mcp__codebase-memory-mcp__*) — pick right tool per task\n` +
-    `• Source code read sym → Serena READ (find_symbol, get_symbols_overview, read_file)\n` +
-    `• Source code WRITE    → Serena WRITE — find_referencing_symbols FIRST, same turn\n` +
-    `• Non-source / shell   → CTX ctx_batch_execute primary; ctx_search for follow-up\n` +
+    `• Source code explore/read → CBM (mcp__codebase-memory-mcp__*)\n` +
+    `• Source code edit         → Serena (mcp__serena__*) — find_referencing_symbols FIRST\n` +
+    `• Non-source / shell       → CTX (mcp__plugin_context-mode_context-mode__*)\n` +
     `• Docs/config/logs     → native Read/Edit/Write\n` +
     `• External docs/web    → mcp__docs__search_docs, mcp__exa__web_search_exa`,
   );
