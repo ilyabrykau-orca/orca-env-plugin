@@ -37,10 +37,9 @@ const CONTEXT_WINDOW_PROTECTION = `<context_window_protection>
 
   <routing_rules>
     Source code (.go .ts .py .c .h):
-      Explore/understand → CBM — pick right tool per task
-      Read a symbol      → Serena READ (find_symbol, get_symbols_overview, read_file)
-      WRITE              → Serena WRITE — call find_referencing_symbols FIRST, same turn
-      NEVER              → native Read / Glob / Grep / Bash-cat / Edit / Write / sed
+      Read/explore/search → CBM (search_code, get_code_snippet, search_graph)
+      WRITE               → Serena WRITE — call find_referencing_symbols FIRST, same turn
+      BLOCKED             → native Read / Glob / Grep / Bash-cat / Edit / Write / sed / ctx_execute / ctx_execute_file
 
     Non-source (configs, logs, docs, diffs):
       read to Edit  → native Read then Edit
@@ -64,6 +63,15 @@ const CONTEXT_WINDOW_PROTECTION = `<context_window_protection>
       source code   → Serena WRITE only
       never         → ctx_execute or Bash to write files
   </routing_rules>
+
+  <blocked_on_source_files>
+    If a hook blocks a tool call, switch to the correct tool IMMEDIATELY. Never retry the same blocked call.
+    - Read / Grep / Glob on .go .ts .py .c .h → use CBM
+    - ctx_execute / ctx_execute_file on source → use CBM get_code_snippet
+    - ctx_search for symbols/functions → use CBM search_code or search_graph
+    - Bash cat/head/tail/sed on source → use CBM
+    - Edit / Write on source → use Serena
+  </blocked_on_source_files>
 
   <forbidden_actions>
     - Read/Glob/Grep/Edit on source files → use CBM or Serena
