@@ -7,7 +7,7 @@
     {
       "name": "orca-env-plugin",
       "source": "./",
-      "description": "Orca-specific MCP routing enforcement, caveman mode, workspace detection, session audit."
+      "description": "Orca-specific MCP routing enforcement, workspace detection, and session audit."
     }
   ]
 }
