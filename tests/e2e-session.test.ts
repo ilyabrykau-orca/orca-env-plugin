@@ -44,7 +44,7 @@ describe("phase 1: session initialization", () => {
     // Must include full routing table
     expect(ctx).toContain("TOOL ROUTING");
     expect(ctx).toContain("codebase-memory-mcp");
-    expect(ctx).toContain("Source code edit");
+    expect(ctx).toContain("Source code WRITE");
     expect(ctx).toContain("Serena");
     expect(ctx).toContain("Docs/config/logs");
     
