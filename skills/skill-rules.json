@@ -1,5 +1,14 @@
 {
   "skills": {
+    "plugin-creator": {
+      "keywords": [
+        "create claude.md", "write claude.md", "update claude.md",
+        "add hooks", "create hooks", "write hooks", "plugin creator",
+        "context window protection", "tool routing enforcement",
+        "hooks.json", "pretooluse hook", "sessionstart hook",
+        "routing block", "session continuity"
+      ]
+    },
     "orca-dev": {
       "keywords": [
         "read", "edit", "write", "refactor", "search code",

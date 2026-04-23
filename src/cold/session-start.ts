@@ -22,16 +22,6 @@ function detectProject(cwd: string): string {
   return "";
 }
 
-function detectCaveman(): string {
-  const val = (process.env.CAVEMAN_MODE ?? "").toLowerCase();
-  switch (val) {
-    case "ultra": return "ultra";
-    case "full": case "1": case "true": case "active": return "full";
-    case "lite": return "lite";
-    default: return "";
-  }
-}
-
 
 const CONTEXT_WINDOW_PROTECTION = `<context_window_protection>
   <priority_instructions>
@@ -101,9 +91,6 @@ export async function handleSessionStart(
       `IMMEDIATELY call: mcp__serena__activate_project(project=${project})`,
     );
   }
-
-  const caveman = detectCaveman();
-  if (caveman) parts.push(`CAVEMAN MODE DETECTED → invoke: /caveman ${caveman}`);
 
   parts.push(
     `TOOL ROUTING (hooks enforce — violations are hard-blocked):\n` +
