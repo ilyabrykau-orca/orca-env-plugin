@@ -45,12 +45,20 @@ Serena is write-only (plus `find_referencing_symbols` immediately before an edit
 
 ## Parallelism — MANDATORY
 
-Fire **all independent CBM reads in one message** (multiple tool calls). Never serialize round-trips that have no data dependency.
+Fire **all independent tool calls in one message**. Never serialize calls with no data dependency.
 
-Must be parallel in a single message:
-- Multiple `search_code` / `get_code_snippet` for different symbols
-- `search_code` + `trace_path` when neither depends on the other's result
-- Any combination of CBM reads that don't feed each other
+Must be parallel (single message, multiple tool calls):
+- Multiple `search_code` / `get_code_snippet` for unrelated symbols
+- CBM reads + `ctx_execute` shell commands when neither needs the other's result
+- Any mix of CBM / CTX / Bash with no data dependency
+
+## CTX shell execution
+
+`ctx_batch_execute` runs its `commands` array **serially** — no setting changes this.
+
+- **Independent commands** → send multiple `ctx_execute` calls in one message (parallel)
+- **Dependent commands** → chain with `&&` in a single `ctx_batch_execute` entry; never use `sleep N` guards
+- `ctx_batch_execute` is best when you need FTS5 indexing of sequential output for later `ctx_search`
 
 ## Project names (CBM index)
 

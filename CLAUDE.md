@@ -26,8 +26,9 @@ When you need to analyze, count, filter, or transform data: **write code** via C
 
 - **Serena edits**: call `find_referencing_symbols` in the same turn before any write — hook blocks edits without it.
 - **CBM / CTX**: consult tool descriptions; pick the tool that fits the task, not the default.
-- **Parallelism**: fire all independent CBM reads in a single message — multiple tool calls with no data dependency must never be serialized.
-- **CTX `ctx_batch_execute`**: provide descriptive `label` per command — labels become FTS5 search chunks.
+- **Parallelism**: fire all independent tool calls (CBM, CTX, Bash) in a single message — never serialize calls with no data dependency.
+- **CTX `ctx_batch_execute` vs `ctx_execute`**: `ctx_batch_execute` runs commands **serially** — no settings change this. Use it only when commands are dependent. For independent shell work, send multiple `ctx_execute` calls in one message (they run in parallel). Chain dependent commands with `&&` inside a single entry instead of using `sleep N` guards.
+- **CTX `ctx_batch_execute` labels**: provide descriptive `label` per command — labels become FTS5 search chunks.
 - **Bash**: only for `git`, `mkdir`, `rm`, `mv`, short-output navigation.
 
 ## File writing policy
