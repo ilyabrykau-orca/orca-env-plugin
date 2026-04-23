@@ -39,7 +39,8 @@ Serena is write-only (plus `find_referencing_symbols` immediately before an edit
 
 ## CBM patterns
 
-- `search_graph` → find qualified name → `get_code_snippet(qualified_name=...)`.
+- **Start with `get_architecture(project=...)`** for any multi-symbol exploration — one call returns the full package/service map, preventing 4–6 exploratory round-trips.
+- `search_graph` → find qualified name → `get_code_snippet(qualified_name=...)`. Never use `get_code_snippet(relative_path=..., start_line=..., end_line=...)` — qualified name lookup is direct.
 - `search_code(pattern, project)` for text hits ranked by structural importance.
 - `path_filter` regex narrows scope (e.g. `^src/`).
 
@@ -59,6 +60,7 @@ Must be parallel (single message, multiple tool calls):
 - **Independent commands** → send multiple `ctx_execute` calls in one message (parallel)
 - **Dependent commands** → chain with `&&` in a single `ctx_batch_execute` entry; never use `sleep N` guards
 - `ctx_batch_execute` is best when you need FTS5 indexing of sequential output for later `ctx_search`
+- **`intent` parameter** — always set on `ctx_execute` for commands that produce large output (pprof, benchmarks, build logs, test output). When output >5KB, `intent` auto-indexes and returns only matched sections; without it the full output floods context. Example: `intent: "allocation sources per function"`
 
 ## Project names (CBM index)
 
