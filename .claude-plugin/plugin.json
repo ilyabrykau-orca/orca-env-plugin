@@ -1,6 +1,6 @@
 {
   "name": "orca-env-plugin",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Orca-specific Claude Code plugin: MCP routing enforcement, workspace detection, and session audit.",
   "author": {
     "name": "Orca Security"

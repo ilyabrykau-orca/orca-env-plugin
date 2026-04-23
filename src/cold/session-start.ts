@@ -25,56 +25,53 @@ function detectProject(cwd: string): string {
 
 const CONTEXT_WINDOW_PROTECTION = `<context_window_protection>
   <priority_instructions>
-    Raw tool output floods your context window. You MUST use context-mode MCP tools to keep raw data in the sandbox.
+    Raw tool output floods your context window. Route all tool output to the sandbox using the aliases below.
   </priority_instructions>
 
-  <tool_selection_hierarchy>
-    1. SOURCE READ: search_code, search_graph, get_code_snippet, trace_path (codebase-memory-mcp)
-       - Mandatory for all source code reads/searches (.go, .ts, .py, .c, .h).
-    2. SOURCE EDIT: replace_symbol_body, replace_content, insert_after_symbol (Serena)
-       - Mandatory for source code edits. MUST run find_referencing_symbols before any edit.
-    3. GATHER: mcp__plugin_context-mode_context-mode__ctx_batch_execute(commands, queries)
-       - Primary tool for non-source research. Runs all commands, auto-indexes, and searches.
-       - ONE call replaces many individual steps.
-       - Each command: {label: "descriptive section header", command: "shell command"}
-       - label becomes the FTS5 chunk title — use descriptive labels for better search.
-    4. FOLLOW-UP: mcp__plugin_context-mode_context-mode__ctx_search(queries: ["q1", "q2", ...])
-       - Use for all follow-up questions. ONE call, many queries.
-    5. PROCESSING: mcp__plugin_context-mode_context-mode__ctx_execute(language, code) | mcp__plugin_context-mode_context-mode__ctx_execute_file(path, language, code)
-       - Use for API calls, log analysis, and data processing.
-  </tool_selection_hierarchy>
+  <tool_aliases>
+    CBM  = codebase-memory-mcp  → mcp__codebase-memory-mcp__search_code, search_graph, get_code_snippet, trace_path
+    Serena = serena             → mcp__serena__replace_symbol_body, replace_content, insert_after_symbol (find_referencing_symbols first)
+    CTX  = context-mode         → mcp__plugin_context-mode_context-mode__ctx_batch_execute (primary), ctx_search, ctx_execute, ctx_execute_file, ctx_fetch_and_index, ctx_index
+  </tool_aliases>
+
+  <routing_rules>
+    Source code (.go .ts .py .c .h):
+      explore → CBM only          (never Read/Glob/Grep/Bash-cat on source)
+      edit    → Serena only       (find_referencing_symbols first; never Edit/Write/sed)
+
+    Non-source (configs, logs, docs, diffs):
+      read to Edit  → native Read (Edit needs content in context)
+      analyze only  → CTX ctx_execute_file or ctx_batch_execute
+
+    Research / shell output:
+      any command   → CTX ctx_batch_execute(commands, queries)  — ONE call, auto-indexes, then ctx_search
+      follow-up     → CTX ctx_search(queries: [...])
+
+    Data processing:
+      compute/parse → CTX ctx_execute(language, code)
+
+    Web / external docs:
+      fetch         → CTX ctx_fetch_and_index(url, source) then ctx_search   (never WebFetch/curl/wget)
+
+    Store for later:
+      index         → CTX ctx_index(content, source)
+
+    Write files:
+      all types     → native Write (create) / Edit (modify)   (never ctx_execute or Bash)
+  </routing_rules>
 
   <forbidden_actions>
-    - DO NOT use native Read/Edit/Grep/Glob, mcp__plugin_context-mode_context-mode__ctx_batch_execute, or mcp__plugin_context-mode_context-mode__ctx_execute_file on source code (.go, .ts, .py, .c, .h). Use codebase-memory-mcp and Serena exclusively.
-    - DO NOT use Bash for commands producing >20 lines of output.
-    - DO NOT use Read for non-source analysis (use execute_file). Read IS correct for non-source files you intend to Edit.
-    - DO NOT use WebFetch (use mcp__plugin_context-mode_context-mode__ctx_fetch_and_index instead).
-    - Bash is ONLY for git/mkdir/rm/mv/navigation.
-    - DO NOT use mcp__plugin_context-mode_context-mode__ctx_execute or mcp__plugin_context-mode_context-mode__ctx_execute_file to create, modify, or overwrite files.
-      ctx_execute is for data analysis, log processing, and computation only.
+    - Read/Glob/Grep/Edit on source files → use CBM or Serena
+    - ctx_execute_file on source files    → use CBM get_code_snippet
+    - WebFetch or curl/wget               → use CTX ctx_fetch_and_index
+    - Bash producing >20 lines            → use CTX ctx_batch_execute
+    - ctx_execute/ctx_execute_file to write files → use native Write/Edit
   </forbidden_actions>
-
-  <file_writing_policy>
-    ALWAYS use the native Write tool to create non-source files and Edit tool to modify non-source files.
-    For source code (.go, .ts, .py, .c, .h), ALWAYS use Serena tools.
-    NEVER use mcp__plugin_context-mode_context-mode__ctx_execute, mcp__plugin_context-mode_context-mode__ctx_execute_file, or Bash to write file content.
-    This applies to configs, plans, specs, YAML, JSON, markdown.
-  </file_writing_policy>
 
   <output_constraints>
     <word_limit>Keep your final response under 500 words.</word_limit>
-    <artifact_policy>
-      Write artifacts (configs, PRDs) to FILES using the native Write tool. NEVER return them as inline text.
-      Use Edit tool (or Serena for source code) for modifications to existing files.
-      Return only: file path + 1-line description.
-    </artifact_policy>
-    <response_format>
-      Your response must be a concise summary:
-      - Actions taken (2-3 bullets)
-      - File paths created/modified
-      - Knowledge base source labels (so parent can search)
-      - Key findings
-    </response_format>
+    <artifact_policy>Write artifacts to FILES (native Write). Return only: file path + 1-line description.</artifact_policy>
+    <response_format>Actions taken (2-3 bullets) · Files modified · Key findings</response_format>
   </output_constraints>
 </context_window_protection>`;
 
@@ -94,10 +91,11 @@ export async function handleSessionStart(
 
   parts.push(
     `TOOL ROUTING (hooks enforce — violations are hard-blocked):\n` +
-    `• Source-code exploration/read/search → codebase-memory-mcp: search_code, search_graph, get_code_snippet, trace_path\n` +
-    `• Source-code edits → Serena: replace_symbol_body, replace_content, insert_after_symbol\n` +
-    `• Docs/config/logs/diffs → native Read/Edit/Write\n` +
-    `• External docs/web → mcp__docs__search_docs, mcp__exa__web_search_exa`,
+    `• Source code explore → CBM (search_code, search_graph, get_code_snippet, trace_path)\n` +
+    `• Source code edit    → Serena (find_referencing_symbols → replace_symbol_body / replace_content)\n` +
+    `• Non-source research → CTX ctx_batch_execute(commands, queries) primary; ctx_search for follow-up\n` +
+    `• Docs/config/logs    → native Read/Edit/Write\n` +
+    `• External docs/web   → mcp__docs__search_docs, mcp__exa__web_search_exa`,
   );
 
   parts.push(CONTEXT_WINDOW_PROTECTION);

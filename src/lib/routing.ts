@@ -79,8 +79,8 @@ const CD_SAFE_VERBS = new Set([
 ]);
 
 // Deny reasons (HINT_* retained for public API compat)
-export const HINT_CBM_SEARCH = "Use codebase-memory-mcp for source-code exploration: search_code, search_graph, get_code_snippet, trace_path.";
-export const HINT_SERENA_EDIT = "Use Serena for source-code edits: replace_symbol_body, replace_content, insert_after_symbol.";
+export const HINT_CBM_SEARCH = "Source code: use CBM (search_code, search_graph, get_code_snippet, trace_path). Do NOT use Read/Glob/Grep/Bash on source files.";
+export const HINT_SERENA_EDIT = "Source code: use Serena (replace_symbol_body, replace_content, insert_after_symbol). Run find_referencing_symbols first. Do NOT use Edit/Write/sed.";
 export const HINT_CBM_READ = HINT_CBM_SEARCH;
 
 // ---------------------------------------------------------------------------

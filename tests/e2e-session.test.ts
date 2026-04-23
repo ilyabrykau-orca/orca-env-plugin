@@ -2,8 +2,10 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { runBinary, isDenied, isAllowed, denyReason, contextText, SRC, PLUGIN_ROOT } from "./helpers";
 import { rmSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { homedir } from "os";
 
 const STATE_DIR = join(PLUGIN_ROOT, "state");
+const SESSION_CACHE_DIR = join(homedir(), ".cache", "orca-env-plugin", "sessions");
 const SESSION_ID = "e2e-fix-bug-session";
 
 /**
@@ -14,13 +16,13 @@ const SESSION_ID = "e2e-fix-bug-session";
  * Steps run sequentially — each depends on prior state.
  */
 
-beforeAll(() => {
+function cleanAllState() {
   rmSync(STATE_DIR, { recursive: true, force: true });
-});
+  rmSync(SESSION_CACHE_DIR, { recursive: true, force: true });
+}
 
-afterAll(() => {
-  rmSync(STATE_DIR, { recursive: true, force: true });
-});
+beforeAll(cleanAllState);
+afterAll(cleanAllState);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHASE 1: SESSION INITIALIZATION
@@ -42,9 +44,9 @@ describe("phase 1: session initialization", () => {
     // Must include full routing table
     expect(ctx).toContain("TOOL ROUTING");
     expect(ctx).toContain("codebase-memory-mcp");
-    expect(ctx).toContain("Source-code edits");
+    expect(ctx).toContain("Source code edit");
     expect(ctx).toContain("Serena");
-    expect(ctx).toContain("Docs/config/logs/diffs → native Read/Edit/Write");
+    expect(ctx).toContain("Docs/config/logs");
     
   });
 
@@ -68,7 +70,7 @@ describe("phase 2: exploration — native tools blocked", () => {
       tool_input: { file_path: `${SRC}/orca/sensors/base.py` },
     });
     expect(isDenied(r)).toBe(true);
-    expect(denyReason(r)).toContain("codebase-memory-mcp");
+    expect(denyReason(r)).toContain("CBM");
     expect(denyReason(r)).toContain("search_code");
     expect(denyReason(r)).toContain("search_graph");
   });
@@ -79,7 +81,7 @@ describe("phase 2: exploration — native tools blocked", () => {
       tool_input: { path: SRC, pattern: "**/*.py" },
     });
     expect(isDenied(r)).toBe(true);
-    expect(denyReason(r)).toContain("codebase-memory-mcp");
+    expect(denyReason(r)).toContain("search_code");
   });
 
   test("step 5 — Grep type=py under ~/src → DENIED", async () => {
@@ -88,7 +90,7 @@ describe("phase 2: exploration — native tools blocked", () => {
       tool_input: { path: SRC, type: "py", pattern: "class AbstractSensor" },
     });
     expect(isDenied(r)).toBe(true);
-    expect(denyReason(r)).toContain("codebase-memory-mcp");
+    expect(denyReason(r)).toContain("search_code");
   });
 
   test("step 6 — Bash: cat source file → DENIED (use CBM)", async () => {
@@ -97,7 +99,7 @@ describe("phase 2: exploration — native tools blocked", () => {
       tool_input: { command: `cat ${SRC}/orca/sensors/base.py` },
     });
     expect(isDenied(r)).toBe(true);
-    expect(denyReason(r)).toContain("codebase-memory-mcp");
+    expect(denyReason(r)).toContain("search_code");
   });
 
   test("step 7 — Bash: sed on source file → DENIED (use Serena)", async () => {
@@ -332,7 +334,7 @@ describe("phase 6: cross-hook edge cases", () => {
   });
 
   test("PromptSubmit with no match → empty output", async () => {
-    const r = await runBinary("user-prompt-submit", { prompt: "what time is it" });
+    const r = await runBinary("user-prompt-submit", { session_id: "isolated-no-match", prompt: "what time is it" });
     expect(r.stdout).toBe("");
   });
 

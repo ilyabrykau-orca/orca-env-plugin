@@ -1,6 +1,6 @@
 import { readFileSync, writeSync, appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { decide } from "../lib/routing";
+import { decide, HINT_CBM_SEARCH, HINT_SERENA_EDIT } from "../lib/routing";
 import { recordDecision } from "../lib/audit";
 
 const HOME = homedir();
@@ -45,8 +45,9 @@ export function handlePreToolUse(p: HookPayload): HookResult {
 // Legacy raw-stdin CLI entry (keeps zero-alloc deny path + RTK rewrite + serena guard)
 // ---------------------------------------------------------------------------
 
-const DENY_EXPLORE = '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Use codebase-memory-mcp for source-code exploration: search_code, search_graph, get_code_snippet, trace_path."}}';
-const DENY_EDIT = '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Use Serena for source-code edits: replace_symbol_body, replace_content, insert_after_symbol."}}';
+// Computed from hint constants — never hardcoded, so hint changes propagate automatically.
+const DENY_EXPLORE = JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: HINT_CBM_SEARCH } });
+const DENY_EDIT    = JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: HINT_SERENA_EDIT } });
 
 function extractStr(raw: string, key: string): string {
   const needle = `"${key}":"`;
@@ -144,7 +145,7 @@ export function runPreToolUseCli(raw: string): void {
 
   if (!d.allow) {
     logSync("deny", toolName, targetPath, d.reason.substring(0, 40));
-    const payload = d.reason === "Use Serena for source-code edits: replace_symbol_body, replace_content, insert_after_symbol."
+    const payload = d.reason === HINT_SERENA_EDIT
       ? DENY_EDIT
       : DENY_EXPLORE;
     writeSync(1, payload);
