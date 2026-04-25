@@ -1,6 +1,6 @@
 {
   "name": "orca-env-plugin",
-  "version": "3.9.0",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
   "scripts": {

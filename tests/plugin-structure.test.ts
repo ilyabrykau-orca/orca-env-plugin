@@ -1,52 +1,47 @@
-import { describe, test, expect } from "bun:test";
-import { existsSync, readFileSync, readdirSync } from "fs";
-import { BINARY, PLUGIN_ROOT } from "./helpers";
+import { describe, it, expect } from "bun:test";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
+const ROOT = join(import.meta.dir, "..");
+
 describe("plugin structure", () => {
-  test("binary exists and is executable", () => {
-    expect(existsSync(BINARY)).toBe(true);
+  it("has dist binary", () => {
+    expect(existsSync(join(ROOT, "dist", "orca-env-plugin"))).toBe(true);
   });
 
-  test("hooks.json routes all events to binary", () => {
-    const hooks = JSON.parse(readFileSync(join(PLUGIN_ROOT, "hooks", "hooks.json"), "utf-8"));
-    const events = ["PreToolUse", "SessionStart", "UserPromptSubmit", "PostToolUse", "Stop", "SubagentStop"];
-    for (const event of events) {
-      expect(hooks.hooks[event]).toBeDefined();
-      const cmd = hooks.hooks[event][0].hooks[0].command;
-      expect(cmd).toContain("orca-env-plugin");
-    }
+  it("has valid hooks.json", () => {
+    const raw = readFileSync(join(ROOT, "hooks", "hooks.json"), "utf-8");
+    const config = JSON.parse(raw);
+    expect(config.hooks).toBeDefined();
+    expect(config.hooks.SessionStart).toBeDefined();
+    expect(config.hooks.Stop).toBeDefined();
+    // No PreToolUse or PostToolUse
+    expect(config.hooks.PreToolUse).toBeUndefined();
+    expect(config.hooks.PostToolUse).toBeUndefined();
   });
 
-  test("no codanna references in skills", () => {
-    const skills = ["orca-setup", "codebase-explorer", "docs", "serena-workflow"];
-    for (const skill of skills) {
-      const path = join(PLUGIN_ROOT, "skills", skill, "SKILL.md");
-      if (existsSync(path)) {
-        const content = readFileSync(path, "utf-8");
-        expect(content.toLowerCase()).not.toContain("codanna");
-      }
-    }
+  it("has valid plugin.json", () => {
+    const raw = readFileSync(join(ROOT, ".claude-plugin", "plugin.json"), "utf-8");
+    const meta = JSON.parse(raw);
+    expect(meta.name).toBe("orca-env-plugin");
+    expect(meta.version).toBe("5.0.0");
   });
 
-  test("skill-rules has no caveman-compress", () => {
-    const rules = JSON.parse(readFileSync(join(PLUGIN_ROOT, "skills", "skill-rules.json"), "utf-8"));
-    expect(rules.skills["caveman-compress"]).toBeUndefined();
+  it("has CLAUDE.md with tool_routing fence", () => {
+    const md = readFileSync(join(ROOT, "CLAUDE.md"), "utf-8");
+    expect(md).toContain("<tool_routing>");
+    expect(md).toContain("</tool_routing>");
   });
 
-  test("agents have no native file tools", () => {
-    const agentDir = join(PLUGIN_ROOT, "agents");
-    const agents = readdirSync(agentDir).filter(f => f.endsWith(".md"));
-    expect(agents.length).toBeGreaterThan(0);
-    const forbidden = ["Bash", "Read", "Grep", "Glob", "Search", "Edit", "Write"];
-    for (const agent of agents) {
-      const content = readFileSync(join(agentDir, agent), "utf-8");
-      for (const tool of forbidden) {
-        const lines = content.split("\n").filter(l => l.trim().startsWith("- "));
-        for (const line of lines) {
-          expect(line.trim()).not.toBe(`- ${tool}`);
-        }
-      }
-    }
+  it("has orca-dev skill", () => {
+    expect(existsSync(join(ROOT, "skills", "orca-dev", "SKILL.md"))).toBe(true);
+  });
+
+  it("has orca-dev agent", () => {
+    expect(existsSync(join(ROOT, "agents", "orca-dev.md"))).toBe(true);
+  });
+
+  it("does not have plugin-creator skill", () => {
+    expect(existsSync(join(ROOT, "skills", "plugin-creator"))).toBe(false);
   });
 });

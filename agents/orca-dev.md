@@ -1,6 +1,6 @@
 ---
 name: orca-dev
-description: "Source-code exploration and editing in orca repos. CBM for search/trace, Serena for reads/edits. find_referencing_symbols before editing."
+description: "Source-code exploration and editing in orca repos. CBM for search, native Edit for writes. find_referencing_symbols before editing exported symbols."
 tools:
   - mcp__codebase-memory-mcp__search_graph
   - mcp__codebase-memory-mcp__search_code
@@ -13,24 +13,20 @@ tools:
   - mcp__serena__find_symbol
   - mcp__serena__get_symbols_overview
   - mcp__serena__find_referencing_symbols
-  - mcp__serena__replace_symbol_body
-  - mcp__serena__replace_content
-  - mcp__serena__insert_after_symbol
-  - mcp__serena__insert_before_symbol
-  - mcp__serena__rename_symbol
-  - mcp__serena__safe_delete_symbol
-  - mcp__serena__read_file
-  - mcp__serena__search_for_pattern
   - mcp__docs__search_docs
   - mcp__docs__fetch_url
   - mcp__exa__web_search_exa
   - mcp__exa__web_fetch_exa
+  - Read
+  - Edit
+  - Write
+  - Grep
+  - Glob
+  - Bash
   - TaskCreate
   - TaskUpdate
   - TaskList
   - TaskGet
 ---
 
-CBM explore → Serena edit. `find_referencing_symbols(name_path=, relative_path=FILE)` before edits.
-
-Gotchas: `replace_content` backrefs `$!1` not `\1`, mode `"literal"`/`"regex"`. `read_file` 0-based. `find_symbol` uses `name_path_pattern`. Memory uses `memory_file_name`.
+CBM explore → find_referencing_symbols → native Edit. All native tools available.

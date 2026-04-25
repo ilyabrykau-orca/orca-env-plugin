@@ -1,78 +1,63 @@
-import { describe, test, expect } from "bun:test";
-import { runBinary, contextText, SRC } from "./helpers";
+import { describe, it, expect } from "bun:test";
+import { handleSessionStart } from "../src/session-start.ts";
 
-describe("session-start", () => {
-  test("detects orca-unified from ~/src", async () => {
-    const r = await runBinary("session-start", { cwd: SRC });
-    const ctx = contextText(r);
-    expect(ctx).toContain("orca-unified");
-    expect(ctx).toContain("activate_project");
+describe("handleSessionStart", () => {
+  it("detects orca-env-plugin project", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/orca-env-plugin" });
+    expect(result.appendContext).toContain("project='orca-env-plugin'");
+    expect(result.appendContext).toContain("mcp__serena__activate_project");
   });
 
-  test("detects orca from ~/src/orca", async () => {
-    const r = await runBinary("session-start", { cwd: `${SRC}/orca` });
-    expect(contextText(r)).toContain("project='orca'");
+  it("detects orca-runtime-sensor project", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/orca-runtime-sensor/pkg" });
+    expect(result.appendContext).toContain("project='orca-runtime-sensor'");
   });
 
-  test("detects orca-sensor", async () => {
-    const r = await runBinary("session-start", { cwd: `${SRC}/orca-sensor` });
-    expect(contextText(r)).toContain("orca-sensor");
+  it("detects orca-cloud-platform project", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/orca-cloud-platform" });
+    expect(result.appendContext).toContain("project='orca-cloud-platform'");
   });
 
-  test("detects orca-runtime-sensor", async () => {
-    const r = await runBinary("session-start", { cwd: `${SRC}/orca-runtime-sensor` });
-    expect(contextText(r)).toContain("orca-runtime-sensor");
+  it("detects orca-sensor project", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/orca-sensor" });
+    expect(result.appendContext).toContain("project='orca-sensor'");
   });
 
-  test("no project from /tmp", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" });
-    const ctx = contextText(r);
-    expect(ctx).not.toContain("SERENA WORKSPACE DETECTED");
-    expect(ctx).toContain("context_window_protection");
+  it("detects helm-charts project", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/helm-charts" });
+    expect(result.appendContext).toContain("project='helm-charts'");
   });
 
-  test("always includes routing table", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" });
-    const ctx = contextText(r);
-    expect(ctx).toContain("codebase-memory-mcp");
-    expect(ctx).toContain("Serena");
+  it("detects grafana-provisioning project", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/grafana-provisioning" });
+    expect(result.appendContext).toContain("project='grafana-provisioning'");
   });
 
-  test("output is valid JSON", async () => {
-    const r = await runBinary("session-start", { cwd: SRC });
-    expect(r.json).not.toBeNull();
-    expect(r.json.hookSpecificOutput.hookEventName).toBe("SessionStart");
-  });
-});
-
-describe("session-start — caveman activation", () => {
-  test("CAVEMAN_MODE=full emits /caveman full", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "full" });
-    const ctx = contextText(r);
-    expect(ctx).toContain("/caveman full");
+  it("detects orca monorepo for /src/orca paths", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/orca/some/path" });
+    expect(result.appendContext).toContain("project='orca'");
   });
 
-  test("CAVEMAN_MODE=ultra emits /caveman ultra", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "ultra" });
-    const ctx = contextText(r);
-    expect(ctx).toContain("/caveman ultra");
+  it("detects orca-unified for bare /src", async () => {
+    const home = process.env.HOME ?? "";
+    const result = await handleSessionStart({ cwd: `${home}/src` });
+    expect(result.appendContext).toContain("project='orca-unified'");
   });
 
-  test("CAVEMAN_MODE=lite emits /caveman lite", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "lite" });
-    const ctx = contextText(r);
-    expect(ctx).toContain("/caveman lite");
+  it("returns routing hint for unknown cwd", async () => {
+    const result = await handleSessionStart({ cwd: "/tmp/random" });
+    expect(result.appendContext).not.toContain("SERENA WORKSPACE");
+    expect(result.appendContext).toContain("PREFERRED ROUTING");
   });
 
-  test("CAVEMAN_MODE=1 maps to full", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "1" });
-    const ctx = contextText(r);
-    expect(ctx).toContain("/caveman full");
+  it("returns routing hint for empty cwd", async () => {
+    const result = await handleSessionStart({ cwd: "" });
+    expect(result.appendContext).toContain("PREFERRED ROUTING");
   });
 
-  test("no CAVEMAN_MODE → no caveman context", async () => {
-    const r = await runBinary("session-start", { cwd: "/tmp" }, { CAVEMAN_MODE: "" });
-    const ctx = contextText(r);
-    expect(ctx).not.toContain("CAVEMAN");
+  it("always includes routing hint", async () => {
+    const result = await handleSessionStart({ cwd: "/Users/test/src/orca-env-plugin" });
+    expect(result.appendContext).toContain("PREFERRED ROUTING");
+    expect(result.appendContext).toContain("CBM");
   });
 });

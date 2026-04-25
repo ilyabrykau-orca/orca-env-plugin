@@ -1,64 +1,35 @@
-import { readFileSync, writeSync } from "fs";
-import { runPreToolUseCli } from "./hot/pre-tool-use";
-import { runUserPromptSubmitCli } from "./hot/user-prompt-submit";
-import { handleSessionStart } from "./cold/session-start";
-import { handlePostToolUse } from "./cold/post-tool-use";
-import { handleStop } from "./cold/stop";
-import { runGainCli } from "./cli/gain";
-import { delegateContextMode } from "./lib/ctx-delegate";
+import { readFileSync } from "fs";
+import { handleSessionStart } from "./session-start.ts";
+import { handleStop } from "./stop.ts";
 
-const event = process.argv[2];
+(async () => {
+  const event = process.argv[2];
+  const raw = readFileSync(0, "utf-8");
 
-// gain CLI: no stdin needed
-if (event === "gain") {
-  runGainCli();
-  process.exit(0);
-}
-
-// Read ALL stdin synchronously via fd 0 -- no async overhead
-const raw = readFileSync(0, "utf-8");
-
-if (event === "pre-tool-use") {
-  runPreToolUseCli(raw);
-} else if (event === "user-prompt-submit") {
-  runUserPromptSubmitCli(raw);
-} else {
-  (async () => {
-    let input: any;
-    try { input = JSON.parse(raw); } catch { process.exit(0); }
-
-    switch (event) {
-      case "session-start": {
-        const r = await handleSessionStart(input);
-        if (r.stdout) writeSync(1, r.stdout);
-        process.exit(r.exitCode ?? 0);
-        break;
-      }
-      case "post-tool-use": {
-        const r = handlePostToolUse(input);
-        process.exit(r.exitCode);
-        break;
-      }
-      case "post-tool-use-capture": {
-        process.exit(delegateContextMode("posttooluse.mjs", raw));
-        break;
-      }
-      case "pre-compact": {
-        process.exit(delegateContextMode("precompact.mjs", raw));
-        break;
-      }
-      case "stop": {
-        const r = await handleStop(input, false);
-        process.exit(r.exitCode);
-        break;
-      }
-      case "subagent-stop": {
-        const r = await handleStop(input, true);
-        process.exit(r.exitCode);
-        break;
-      }
-      default:
-        process.exit(0);
+  switch (event) {
+    case "session-start": {
+      const result = await handleSessionStart(JSON.parse(raw));
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "SessionStart",
+          additionalContext: result.appendContext,
+        },
+      }));
+      process.exit(0);
+      break;
     }
-  })();
-}
+    case "stop": {
+      await handleStop(JSON.parse(raw), false);
+      process.exit(0);
+      break;
+    }
+    case "subagent-stop": {
+      await handleStop(JSON.parse(raw), true);
+      process.exit(0);
+      break;
+    }
+    default:
+      process.stderr.write(`Unknown event: ${event}\n`);
+      process.exit(1);
+  }
+})();

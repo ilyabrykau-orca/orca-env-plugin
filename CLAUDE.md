@@ -1,43 +1,42 @@
-# Orca Env Plugin — MANDATORY routing rules
+# orca-env-plugin
 
-## Tool families
+Claude Code plugin: workspace detection, advisory tool routing, session analytics. TypeScript + Bun.
 
-| Alias | Namespace | Role |
-|-------|-----------|------|
-| **CBM** | `mcp__codebase-memory-mcp__*` | Source code exploration and reading — consult tool descriptions |
-| **Serena** | `mcp__serena__*` | Source code WRITE only — call `find_referencing_symbols` first to trace impact |
-| **CTX** | `mcp__plugin_context-mode_context-mode__*` | Non-source research, shell, web, compute — consult tool descriptions |
+<tool_routing>
+## Tool routing — advisory
 
-## Routing — MANDATORY
+| Intent | Use | Avoid |
+|---|---|---|
+| Find callers / call chain | `codebase-memory-mcp.trace_path` | manual grep |
+| Find functions by name | `codebase-memory-mcp.search_graph` | Glob on source |
+| Read a symbol body | `codebase-memory-mcp.get_code_snippet` | Read on large source files |
+| Grep-like text search | `codebase-memory-mcp.search_code` | native Grep when CBM is indexed |
+| Check impact before edit | `serena.find_referencing_symbols` | editing without checking callers |
+| Edit source code | native `Edit` after reference check | blind writes without context |
+| Non-source files (.json, .yaml, .md) | native `Read` / `Edit` / `Write` | — |
+| Shell commands | `Bash` | — |
+| Architecture overview | `codebase-memory-mcp.get_architecture` | reading files one by one |
 
-| Task | Use | Never |
-|------|-----|-------|
-| Explore / read / search / navigate source code (`.go .ts .py .c .h`) | **CBM** | Read / Glob / Grep / Bash / any `mcp__serena__` read tool |
-| Write source code | **Serena** — `find_referencing_symbols` first (traces impact), same turn | Edit / Write / sed |
-| Non-source research / shell output | **CTX** | Bash >20 lines |
-| Read non-source to then Edit | native `Read` | — |
-| Write any non-source file | native `Write` / `Edit` | ctx_execute / Bash |
+Native Read, Edit, Grep, Glob always work. CBM is preferred for structural queries because it uses ~120x fewer tokens.
+</tool_routing>
 
-## Think in Code — MANDATORY
+## Execution contract
 
-When you need to analyze, count, filter, or transform data: **write code** via CTX `ctx_execute(language, code)`. Do NOT pull raw output into context. Pure JS, Node built-ins only, always `try/catch`.
+- No clarifying turns. State assumption, proceed, verify with `bun test`.
+- Batch independent tool calls in one message.
+- Responses under 500 words. Write artifacts to files.
 
-## Rules
+## Commands
 
-- **Serena edits**: call `find_referencing_symbols` in the same turn before any write — hook blocks edits without it.
-- **CBM / CTX**: consult tool descriptions; pick the tool that fits the task, not the default.
-- **Parallelism**: fire all independent tool calls (CBM, CTX, Bash) in a single message — never serialize calls with no data dependency.
-- **CTX `ctx_batch_execute` vs `ctx_execute`**: `ctx_batch_execute` runs commands **serially** — no settings change this. Use it only when commands are dependent. For independent shell work, send multiple `ctx_execute` calls in one message (they run in parallel). Chain dependent commands with `&&` inside a single entry instead of using `sleep N` guards.
-- **CTX `ctx_execute` intent**: always set `intent` for commands producing large output (pprof, benchmarks, build logs) — auto-indexes and returns matched sections only; without it full output floods context.
-- **CTX `ctx_batch_execute` labels**: provide descriptive `label` per command — labels become FTS5 search chunks.
-- **Bash**: only for `git`, `mkdir`, `rm`, `mv`, short-output navigation.
+- Build: `bash build.sh`
+- Test: `bun test`
+- Typecheck: `bun run --bun tsc --noEmit`
 
-## File writing policy
+## Project structure
 
-Native `Write` to create · native `Edit` to modify · Serena WRITE for source code.
-Never `ctx_execute`, `ctx_execute_file`, or Bash to write files.
-
-## Output
-
-- Responses under 500 words.
-- Artifacts to FILES — never inline. Return: file path + 1-line description.
+- `src/` — plugin source (index.ts, session-start.ts, stop.ts)
+- `hooks/` — hook configuration (hooks.json)
+- `skills/` — orca-dev skill
+- `agents/` — orca-dev agent
+- `dist/` — compiled Bun binary
+- `tests/` — Bun test suite

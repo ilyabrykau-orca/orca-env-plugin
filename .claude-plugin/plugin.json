@@ -1,9 +1,9 @@
 {
   "name": "orca-env-plugin",
-  "version": "3.8.0",
-  "description": "Orca-specific Claude Code plugin: MCP routing enforcement, workspace detection, and session audit.",
+  "version": "5.0.0",
+  "description": "Orca workspace detection, advisory routing hints, and session analytics for Claude Code.",
   "author": {
-    "name": "Orca Security"
+    "name": "Ilya Brykau"
   },
   "homepage": "https://github.com/ilyabrykau-orca/orca-env-plugin",
   "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin"

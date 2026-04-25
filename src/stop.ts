@@ -1,55 +1,48 @@
-import { createReadStream, existsSync, appendFileSync, writeFileSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, appendFileSync, writeFileSync } from "fs";
+import { createReadStream } from "fs";
 import { createInterface } from "readline";
 import { join } from "path";
-import { blockRate, topDenies, DEFAULT_DB, type DenyRow } from "../lib/audit";
 
-interface StopInput {
-  transcript_path?: string;
-  agent_transcript_path?: string;
-  agent_id?: string;
-  cwd?: string;
-  gitBranch?: string;
+interface Tokens {
+  input: number;
+  output: number;
+  cache_read: number;
+  cache_creation: number;
+  total: number;
 }
 
 interface Stats {
-  tokens: {
-    input: number;
-    output: number;
-    cache_read: number;
-    cache_creation: number;
-    total: number;
-  };
+  tokens: Tokens;
   tools: Record<string, number>;
   messages: { user: number; assistant: number };
   timestamps: { start: Date | null; end: Date | null };
   session_id: string | null;
   model: string | null;
-  duration_seconds?: number;
   hook_event?: string;
   agent_id?: string;
   cwd?: string;
   git_branch?: string;
   analyzed_at?: string;
-  audit?: { blockRate: number; topDenies: DenyRow[] };
+  duration_seconds?: number;
 }
 
-export type AuditSummary = { blockRate: number; topDenies: DenyRow[] };
-
-export function auditSummary(dbPath: string = DEFAULT_DB): AuditSummary {
-  return { blockRate: blockRate(dbPath), topDenies: topDenies(3, dbPath) };
+interface StopInput {
+  cwd: string;
+  gitBranch: string;
+  transcript_path?: string;
+  agent_transcript_path?: string;
+  agent_id?: string;
 }
 
 export async function handleStop(
   input: StopInput,
   isSubagent: boolean,
-): Promise<{ stdout?: string; exitCode: number }> {
+): Promise<void> {
   const transcriptPath = isSubagent
     ? (input.agent_transcript_path ?? input.transcript_path)
     : input.transcript_path;
 
-  if (!transcriptPath || !existsSync(transcriptPath)) {
-    return { exitCode: 0 };
-  }
+  if (!transcriptPath || !existsSync(transcriptPath)) return;
 
   const stats = await parseTranscript(transcriptPath);
   stats.hook_event = isSubagent ? "SubagentStop" : "Stop";
@@ -57,7 +50,6 @@ export async function handleStop(
   stats.cwd = input.cwd;
   stats.git_branch = input.gitBranch;
   stats.analyzed_at = new Date().toISOString();
-  stats.audit = auditSummary();
 
   const projectDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
   const statsDir = join(projectDir, "logs", "stats");
@@ -67,24 +59,18 @@ export async function handleStop(
   const logPath = join(statsDir, logName);
   appendFileSync(logPath, JSON.stringify(stats) + "\n");
 
-  const latestName = isSubagent
-    ? "latest-subagent-session.json"
-    : "latest-session.json";
+  const latestName = isSubagent ? "latest-subagent-session.json" : "latest-session.json";
   writeFileSync(join(statsDir, latestName), JSON.stringify(stats, null, 2));
 
   const t = stats.tokens;
-  const a = stats.audit;
   process.stderr.write(
     `\n ${isSubagent ? "Subagent " : ""}Session Statistics:\n` +
     `   Tokens: ${t.total.toLocaleString()} (${t.input.toLocaleString()} in, ${t.output.toLocaleString()} out)\n` +
     `   Cache: ${t.cache_read.toLocaleString()} read, ${t.cache_creation.toLocaleString()} created\n` +
-    `   Tools: ${Object.keys(stats.tools).length} types, ${Object.values(stats.tools).reduce((a, b) => a + b, 0)} total uses\n` +
+    `   Tools: ${Object.keys(stats.tools).length} types, ${Object.values(stats.tools).reduce((a: number, b: number) => a + b, 0)} total uses\n` +
     `   Duration: ${stats.duration_seconds ?? 0}s\n` +
-    `   Block rate: ${(a.blockRate * 100).toFixed(1)}%\n` +
     `   Saved to: ${logPath}\n\n`,
   );
-
-  return { exitCode: 0 };
 }
 
 async function parseTranscript(path: string): Promise<Stats> {

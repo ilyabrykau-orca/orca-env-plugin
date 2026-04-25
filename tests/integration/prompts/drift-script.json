@@ -1,8 +1,0 @@
-{
-  "turns": 60,
-  "prompt_template": "Say 'ok' and nothing else.",
-  "check_every": 5,
-  "banned_filler": ["certainly", "of course", "I'd be happy", "let me just"],
-  "native_read_at_turn": [15, 30, 45],
-  "native_read_file": "/tmp/fake.go"
-}
