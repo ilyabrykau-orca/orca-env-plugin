@@ -1,0 +1,21 @@
+{
+  "name": "pretool-edit-non-source-allowed",
+  "event": "PreToolUse",
+  "hook": "hooks/route-source.sh",
+  "env": { "WATCHED_PREFIX": "__REPO__/src" },
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "__REPO__/src/README.md",
+      "old_string": "old",
+      "new_string": "new"
+    },
+    "tool_use_id": "toolu_004"
+  },
+  "expect": {
+    "exit_code": 0
+  }
+}

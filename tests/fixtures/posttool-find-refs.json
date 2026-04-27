@@ -1,0 +1,27 @@
+{
+  "name": "posttool-find-refs",
+  "event": "PostToolUse",
+  "hook": "hooks/post-record-refs.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "mcp__serena__find_referencing_symbols",
+    "tool_input": {
+      "name_path": "handleRequest",
+      "relative_path": "src/app/main.go"
+    },
+    "tool_response": {
+      "is_error": false,
+      "content": [{"type": "text", "text": "Found 3 references"}]
+    },
+    "tool_use_id": "toolu_011"
+  },
+  "expect": {
+    "exit_code": 0,
+    "state_files_created": [
+      {"name": "refs-traced.sess-001.json"}
+    ]
+  }
+}

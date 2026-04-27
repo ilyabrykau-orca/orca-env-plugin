@@ -1,0 +1,17 @@
+{
+  "name": "pretool-bash-rtk-claude-raw",
+  "event": "PreToolUse",
+  "hook": "hooks/rtk-rewrite-bash.sh",
+  "env": { "CLAUDE_RAW": "1" },
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "ls dist" },
+    "tool_use_id": "toolu_010"
+  },
+  "expect": {
+    "exit_code": 0
+  }
+}

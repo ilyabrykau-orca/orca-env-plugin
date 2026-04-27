@@ -1,0 +1,21 @@
+{
+  "name": "pretool-edit-outside-prefix-allowed",
+  "event": "PreToolUse",
+  "hook": "hooks/route-source.sh",
+  "env": { "WATCHED_PREFIX": "__REPO__/src" },
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__TMP__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/tmp/scratch.go",
+      "old_string": "x",
+      "new_string": "y"
+    },
+    "tool_use_id": "toolu_005"
+  },
+  "expect": {
+    "exit_code": 0
+  }
+}

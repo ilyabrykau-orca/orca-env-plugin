@@ -1,0 +1,19 @@
+{
+  "name": "instructionsloaded-claudemd",
+  "event": "InstructionsLoaded",
+  "hook": "hooks/verify-instructions-loaded.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "InstructionsLoaded",
+    "file_path": "__REPO__/CLAUDE.md",
+    "load_reason": "session_start"
+  },
+  "expect": {
+    "exit_code": 0,
+    "state_files_created": [
+      {"name": "last-routing-load.json"}
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "pretool-bash-rtk-rewrite",
+  "event": "PreToolUse",
+  "hook": "hooks/rtk-rewrite-bash.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "ls dist" },
+    "tool_use_id": "toolu_008"
+  },
+  "expect": {
+    "exit_code": 0,
+    "stdout_json": true,
+    "json_path_equals": {
+      ".hookSpecificOutput.permissionDecision": "allow"
+    },
+    "json_path_exists": [".hookSpecificOutput.updatedInput.command"]
+  }
+}

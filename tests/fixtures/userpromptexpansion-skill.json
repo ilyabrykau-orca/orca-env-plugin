@@ -1,0 +1,21 @@
+{
+  "name": "userpromptexpansion-skill",
+  "event": "UserPromptExpansion",
+  "hook": "hooks/skill-expansion-context.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "UserPromptExpansion",
+    "command_name": "orca-dev",
+    "prompt": "find handleRequest"
+  },
+  "expect": {
+    "exit_code": 0,
+    "stdout_json": true,
+    "json_path_equals": {
+      ".hookSpecificOutput.hookEventName": "UserPromptExpansion"
+    },
+    "json_path_exists": [".hookSpecificOutput.additionalContext"]
+  }
+}

@@ -1,120 +1,57 @@
 # orca-env-plugin
 
-Orca-specific Claude Code plugin: MCP routing enforcement, caveman mode persistence, workspace detection, and SQLite session audit. Designed for the `~/src` orca workspace layout.
+**v6.0.0** — Enforced tool routing for orca repos, Serena workspace activation, session analytics.
 
-Blocks native Read/Edit/Grep on code files → routes to MCP alternatives ([codebase-memory-mcp](https://github.com/orcasecurity/codebase-memory-mcp) for search, [Serena](https://github.com/oraios/serena) for edits).
+## What it does
 
-Optional: co-install [`claude-mem`](https://github.com/thedotmack/claude-mem) (`npx claude-mem install`) for memory/history search on `:37777`. Plugin degrades gracefully if worker is absent.
+- **Blocks** native Read, Edit, Write, Grep, Glob on source files under `~/src` via PreToolUse hooks + `permissions.deny`
+- **Routes** source reads/searches to `mcp__codebase-memory-mcp__*` (~120x token savings)
+- **Routes** source writes to `mcp__serena__*` (always after `find_referencing_symbols`)
+- **Rewrites** Bash commands through `rtk` for token savings (transparent)
+- **Audits** every tool batch; surfaces escapes to the model via `decision: block`
+- **Records** Serena activation + workspace detection on session start
+- **Logs** session statistics (tokens, tools, duration) on stop
 
-## Routing
+## What's enforced and what isn't
 
-| Native tool | Blocked on | Routed to |
-|---|---|---|
-| `Read` | Code files (.py, .go, .ts, .rs, ...) | `mcp__serena__find_symbol` / `mcp__serena__read_file` |
-| `Edit` / `Write` | Code files | `mcp__serena__replace_symbol_body` / `mcp__serena__replace_content` |
-| `Grep` | All files | `mcp__codanna__semantic_search_with_context` |
-| `Glob` | All files | `mcp__codanna__search_symbols` |
+Three independent enforcement layers:
 
-Non-code files (.json, .yaml, .md, .toml) pass through.
+1. **PreToolUse `permissionDecision: deny` + exit 2** — gives Claude actionable feedback via `permissionDecisionReason`
+2. **`permissions.deny` in settings.json** — declarative deny; survives hook bypass cases
+3. **`PostToolBatch` audit** — catches escapes after the batch resolves; blocks next turn
 
-### Extra features
-- **Serena edit guard** — warns on edit w/o `find_referencing_symbols`
-- **Project detection** — auto-detects workspace, injects Serena activation
-- **Skill activation** — suggests skills by prompt keywords
-- **Session analytics** — token usage, tool distribution, costs
+Known Claude Code issues ([#37210](https://github.com/anthropics/claude-code/issues/37210), [#33106](https://github.com/anthropics/claude-code/issues/33106)) can let `Edit` and MCP-tool calls slip through layer 1. Layer 2 still blocks in those cases. If both fail, layer 3 surfaces the violation. None is airtight alone; together they hold.
 
-## Prerequisites
-
-- [Claude Code](https://claude.ai/code) CLI
-- [Codanna](https://github.com/bartolli/codanna) at `https://localhost:8443/mcp`
-- [Serena](https://github.com/aorwall/serena) at `http://127.0.0.1:8765/mcp`
-- `jq` (`brew install jq`)
-
-## Install
+## Installation
 
 ```bash
-# Register marketplace (one-time)
-claude plugin marketplace add orca-sensor-marketplace ilyabrykau-orca/orca-sensor-marketplace
-
-# Install plugin
-claude plugin install claude-toolkit@orca-sensor-marketplace
+/plugin install ./path/to/orca-env-plugin
 ```
 
-Or from repo:
+## Build
 
 ```bash
-claude plugin install --from-repo ilyabrykau-orca/claude-toolkit
+# Rebuild the session-analytics binary (Stop/SubagentStop hooks)
+bash build.sh
+
+# Run hook tests
+python3 ~/.claude/skills/md-generator/scripts/run_plugin_tests.py . --static --unit
+
+# TypeScript unit tests
+bun test
 ```
 
-## Structure
+## Override
 
-```
-hooks/
-  pre-tool-router       ← bash: native blocking + Serena edit guard (~10ms)
-  post-serena-refs      ← bash: tracks reference-traced files
-  skill-activation-prompt ← bash: keyword matching for skill suggestions
-  session-start         ← bash: project detection + context injection
-  stop.js               ← node: session analytics (once per session)
-  subagent-stop.js      ← node: subagent analytics
-  utils/transcript-parser.js
+To bypass a deny for a one-off task, add to `.claude/settings.local.json`:
 
-skills/
-  codanna/SKILL.md      ← Codanna API patterns, wrong-vs-right table
-  orca-setup/SKILL.md   ← workspace routing rules, build commands
-  serena-workflow/SKILL.md ← Serena editing protocol
-  docs/SKILL.md         ← Docs MCP usage
-  skill-rules.json      ← keyword triggers for skill activation
-
-tests/
-  run-all.sh            ← unified runner (--unit / --integration)
-  unit/                 ← 11 test files
-  integration/          ← integration tests + prompts
+```json
+{"permissions": {"allow": ["Edit(/path/to/specific/file.go)"]}}
 ```
 
-## Hook Latency
+Never push `settings.local.json` to source control.
 
-| Hook | Latency | Frequency |
-|---|---|---|
-| `pre-tool-router` | ~10ms | Every tool call |
-| `post-serena-refs` | ~12ms | After `find_referencing_symbols` |
-| `skill-activation-prompt` | ~8ms | Per user message |
-| `session-start` | ~11ms | Per session |
-| `stop.js` | ~70ms | Once at session end |
+## Version history
 
-## Testing
-
-```bash
-# Run all unit tests
-bash tests/run-all.sh --unit
-
-# Run with verbose output
-bash tests/run-all.sh --unit --verbose
-```
-
-## Config
-
-### Project detection
-
-`session-start` hook detects workspace from `$PWD`:
-
-| Path pattern | Detected project |
-|---|---|
-| `*/orca-runtime-sensor*` | `orca-runtime-sensor` |
-| `*/orca-sensor*` | `orca-sensor` |
-| `*/helm-charts*` | `helm-charts` |
-| `*/src/orca*` | `orca` |
-| `*/src` | `orca-unified` |
-
-Edit `hooks/session-start` for custom projects.
-
-### Blocked extensions
-
-Edit `case` pattern in `hooks/pre-tool-router` (line 41):
-
-```bash
-*.py|*.go|*.ts|*.tsx|*.js|*.jsx|*.rs|*.cpp|*.c|*.h|*.hpp|*.rb|*.java|*.kt|*.php|*.scala|*.swift|*.sh|*.bash)
-```
-
-## License
-
-MIT
+- **v6.0.0** — Full routing enforcement: PreToolUse deny hooks, permissions.deny, PostToolBatch audit, test scaffold, SessionStart split for compact
+- **v5.0.0** — Advisory routing (broken: no enforcement hooks)

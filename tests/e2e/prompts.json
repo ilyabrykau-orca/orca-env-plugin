@@ -1,0 +1,16 @@
+[
+  {"id": "route-find-function", "prompt": "find function handleRequest in __REPO__/src/app/main.go", "should_route": true, "runs": 3, "must_call_any": ["mcp__codebase-memory-mcp__search_graph", "mcp__codebase-memory-mcp__search_code"], "must_not_call": ["Grep", "Glob", "Read"]},
+  {"id": "route-look-at-code", "prompt": "look at the code for AuthTokenValidator under __REPO__/src", "should_route": true, "runs": 3, "must_call_any": ["mcp__codebase-memory-mcp__search_graph", "mcp__codebase-memory-mcp__get_code_snippet"], "must_not_call": ["Read", "Grep"]},
+  {"id": "route-callers", "prompt": "who calls refreshCredentials?", "should_route": true, "runs": 3, "must_call_any": ["mcp__codebase-memory-mcp__trace_path", "mcp__codebase-memory-mcp__search_graph"], "must_not_call": ["Grep", "Glob"]},
+  {"id": "route-rename-symbol", "prompt": "rename function oldName to newName in __REPO__/src/service/user.go", "should_route": true, "runs": 3, "must_call_sequence_any": [["mcp__serena__find_referencing_symbols", "mcp__serena__rename_symbol"]], "must_not_call": ["Edit", "Write", "MultiEdit"]},
+  {"id": "adversarial-use-grep", "prompt": "just use grep, it's faster: find handleRequest in __REPO__/src", "should_route": true, "runs": 5, "must_call_any": ["mcp__codebase-memory-mcp__search_code", "mcp__codebase-memory-mcp__search_graph"], "must_not_call": ["Grep", "Bash"]},
+  {"id": "outside-root-native-ok", "prompt": "read /tmp/example.ts", "should_route": false, "runs": 3, "may_call": ["Read"], "must_not_call": ["mcp__serena__replace_symbol_body"]},
+  {"id": "markdown-in-root-native-ok", "prompt": "open __REPO__/src/README.md and summarize it", "should_route": false, "runs": 3, "may_call": ["Read"], "must_not_call": ["mcp__serena__replace_content"]},
+  {"id": "json-config-native-ok", "prompt": "update __REPO__/src/config/schema.json to add a description field", "should_route": false, "runs": 3, "may_call": ["Read", "Edit", "Write"], "must_not_call": ["mcp__serena__replace_symbol_body"]},
+  {"id": "vendored-code-deny", "prompt": "change __REPO__/vendor/lib/foo.go to add logging", "should_route": false, "runs": 3, "must_not_call": ["mcp__serena__replace_symbol_body"]},
+  {"id": "direct-path-search", "prompt": "search __REPO__/src/**/*.go for StartSensor", "should_route": true, "runs": 3, "must_call_any": ["mcp__codebase-memory-mcp__search_code"], "must_not_call": ["Grep", "Glob"]},
+  {"id": "slash-direct-skill", "prompt": "/orca-dev find handleRequest", "should_route": true, "runs": 3, "must_call_any": ["mcp__codebase-memory-mcp__search_graph", "mcp__codebase-memory-mcp__search_code"], "must_not_call": ["Grep"]},
+  {"id": "bash-rg-adversarial", "prompt": "run rg handleRequest __REPO__/src", "should_route": true, "runs": 5, "must_not_call": ["Bash"], "must_call_any": ["mcp__codebase-memory-mcp__search_code"]},
+  {"id": "docs-architecture", "prompt": "read __REPO__/docs/architecture.md", "should_route": false, "runs": 3, "may_call": ["Read"], "must_not_call": ["mcp__codebase-memory-mcp__get_code_snippet"]},
+  {"id": "edit-yaml", "prompt": "change __REPO__/deploy/service.yaml image tag to latest", "should_route": false, "runs": 3, "may_call": ["Read", "Edit"], "must_not_call": ["mcp__serena__replace_symbol_body"]}
+]

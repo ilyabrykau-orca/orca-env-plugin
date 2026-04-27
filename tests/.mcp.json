@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "codebase-memory-mcp": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/tests/stubs/cbm-stub-server.py"]
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/tests/stubs/serena-stub-server.py"]
+    }
+  }
+}

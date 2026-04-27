@@ -1,0 +1,26 @@
+{
+  "name": "pretool-write-source",
+  "event": "PreToolUse",
+  "hook": "hooks/route-source.sh",
+  "env": { "WATCHED_PREFIX": "__REPO__/src" },
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "__REPO__/src/app/new_file.py",
+      "content": "# new file"
+    },
+    "tool_use_id": "toolu_003"
+  },
+  "expect": {
+    "exit_code": 2,
+    "stdout_json": true,
+    "json_path_equals": {
+      ".hookSpecificOutput.permissionDecision": "deny"
+    },
+    "json_path_exists": [".hookSpecificOutput.permissionDecisionReason"],
+    "stderr_contains": "Native Write"
+  }
+}

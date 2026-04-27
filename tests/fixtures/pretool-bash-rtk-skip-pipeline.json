@@ -1,0 +1,17 @@
+{
+  "name": "pretool-bash-rtk-skip-pipeline",
+  "event": "PreToolUse",
+  "hook": "hooks/rtk-rewrite-bash.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "cat foo.go | grep main" },
+    "tool_use_id": "toolu_009"
+  },
+  "expect": {
+    "exit_code": 0
+  }
+}

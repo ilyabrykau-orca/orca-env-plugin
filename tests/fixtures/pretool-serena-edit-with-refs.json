@@ -1,0 +1,27 @@
+{
+  "name": "pretool-serena-edit-with-refs",
+  "event": "PreToolUse",
+  "hook": "hooks/pre-serena-edit-guard.sh",
+  "env": {},
+  "state_files": [
+    {
+      "name": "refs-traced.sess-001.json",
+      "content": "{\"session_id\":\"sess-001\",\"traced\":{\"src/app/main.go\":1700000000}}"
+    }
+  ],
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__serena__replace_symbol_body",
+    "tool_input": {
+      "name_path": "handleRequest",
+      "relative_path": "src/app/main.go",
+      "new_body": "func handleRequest() {}"
+    },
+    "tool_use_id": "toolu_013"
+  },
+  "expect": {
+    "exit_code": 0
+  }
+}

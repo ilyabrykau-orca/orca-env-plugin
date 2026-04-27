@@ -1,42 +1,52 @@
 # orca-env-plugin
 
-Claude Code plugin: workspace detection, advisory tool routing, session analytics. TypeScript + Bun.
+Claude Code plugin: enforced tool routing for orca repos, Serena workspace activation, session analytics.
 
 <tool_routing>
-## Tool routing — advisory
+Routing enforced by PreToolUse hooks + permissions.deny + PostToolBatch audit.
+Source prefix: ~/src (orca, orca-sensor, orca-runtime-sensor, orca-cloud-platform, helm-charts, grafana-provisioning).
 
-| Intent | Use | Avoid |
-|---|---|---|
-| Find callers / call chain | `codebase-memory-mcp.trace_path` | manual grep |
-| Find functions by name | `codebase-memory-mcp.search_graph` | Glob on source |
-| Read a symbol body | `codebase-memory-mcp.get_code_snippet` | Read on large source files |
-| Grep-like text search | `codebase-memory-mcp.search_code` | native Grep when CBM is indexed |
-| Check impact before edit | `serena.find_referencing_symbols` | editing without checking callers |
-| Edit source code | native `Edit` after reference check | blind writes without context |
-| Non-source files (.json, .yaml, .md) | native `Read` / `Edit` / `Write` | — |
-| Shell commands | `Bash` | — |
-| Architecture overview | `codebase-memory-mcp.get_architecture` | reading files one by one |
+## Source files (.go .ts .tsx .py .rs)
 
-Native Read, Edit, Grep, Glob always work. CBM is preferred for structural queries because it uses ~120x fewer tokens.
+Read / search / navigate: `mcp__codebase-memory-mcp__*`.
+Use search_code, get_code_snippet, search_graph, trace_path, get_architecture, query_graph.
+Never use Read, Grep, or Glob on source files. Use mcp__codebase-memory-mcp__search_code instead.
+
+Write / edit / refactor: `mcp__serena__*`.
+Call find_referencing_symbols(name_path=…, relative_path=…) FIRST in the same turn — a hook rejects edits without it.
+Never use Edit, Write, or MultiEdit on source files. Use mcp__serena__replace_symbol_body or replace_content instead.
+
+## Non-source (.md .json .yaml .toml configs)
+
+Native Read, Edit, Write.
+
+## Shell
+
+Bash only. rtk auto-rewrites commands for token savings (transparent, no action needed).
+
+## Exempt paths
+
+vendor/, third_party/, generated/, node_modules/, dist/, build/ — native tools permitted.
 </tool_routing>
 
 ## Execution contract
 
-- No clarifying turns. State assumption, proceed, verify with `bun test`.
-- Batch independent tool calls in one message.
-- Responses under 500 words. Write artifacts to files.
+No clarifying turns. State assumption, proceed, verify.
+Batch independent tool calls in one message.
+Responses ≤500 words. Write artifacts to files.
 
 ## Commands
 
-- Build: `bash build.sh`
-- Test: `bun test`
+- Build binary: `bash build.sh`
+- Hook tests (static + unit): `python ~/.claude/skills/md-generator/scripts/run_plugin_tests.py . --static --unit`
+- TypeScript tests: `bun test`
 - Typecheck: `bun run --bun tsc --noEmit`
 
-## Project structure
+## Structure
 
-- `src/` — plugin source (index.ts, session-start.ts, stop.ts)
-- `hooks/` — hook configuration (hooks.json)
-- `skills/` — orca-dev skill
-- `agents/` — orca-dev agent
+- `src/` — TypeScript source (session analytics binary: Stop/SubagentStop)
+- `hooks/` — enforcement scripts + hooks.json
+- `skills/orca-dev/` — orca-dev skill
+- `agents/orca-dev.md` — workflow subagent (CBM + Serena only, no native source tools)
 - `dist/` — compiled Bun binary
-- `tests/` — Bun test suite
+- `tests/` — hook unit tests, fixtures, e2e evals

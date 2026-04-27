@@ -1,0 +1,19 @@
+{
+  "name": "sessionstart-compact",
+  "event": "SessionStart",
+  "hook": "hooks/session-start-compact.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-001",
+    "cwd": "__REPO__",
+    "hook_event_name": "SessionStart"
+  },
+  "expect": {
+    "exit_code": 0,
+    "stdout_json": true,
+    "json_path_equals": {
+      ".hookSpecificOutput.hookEventName": "SessionStart"
+    },
+    "json_path_exists": [".hookSpecificOutput.additionalContext"]
+  }
+}

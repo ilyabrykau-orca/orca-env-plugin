@@ -1,0 +1,26 @@
+{
+  "name": "pretool-serena-edit-without-refs",
+  "event": "PreToolUse",
+  "hook": "hooks/pre-serena-edit-guard.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-no-refs",
+    "cwd": "__REPO__",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__serena__replace_symbol_body",
+    "tool_input": {
+      "name_path": "handleRequest",
+      "relative_path": "src/app/main.go",
+      "new_body": "func handleRequest() {}"
+    },
+    "tool_use_id": "toolu_012"
+  },
+  "expect": {
+    "exit_code": 2,
+    "stdout_json": true,
+    "json_path_equals": {
+      ".hookSpecificOutput.permissionDecision": "deny"
+    },
+    "json_path_exists": [".hookSpecificOutput.permissionDecisionReason"]
+  }
+}

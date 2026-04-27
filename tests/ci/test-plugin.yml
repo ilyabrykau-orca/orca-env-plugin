@@ -1,0 +1,34 @@
+name: plugin-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  static-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - name: Install deps
+        run: bun install
+      - name: Build binary
+        run: bash build.sh
+      - name: TypeScript tests
+        run: bun test
+      - name: Static validation
+        run: python3 ~/.claude/skills/md-generator/scripts/validate_plugin.py .
+      - name: Hook unit tests
+        run: python3 ~/.claude/skills/md-generator/scripts/run_plugin_tests.py . --unit
+
+  e2e:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    needs: static-unit
+    steps:
+      - uses: actions/checkout@v4
+      - name: e2e routing compliance
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 ~/.claude/skills/md-generator/scripts/run_plugin_tests.py . --e2e --runs 3

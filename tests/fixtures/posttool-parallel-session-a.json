@@ -1,0 +1,27 @@
+{
+  "name": "posttool-parallel-session-a",
+  "event": "PostToolUse",
+  "hook": "hooks/post-record-refs.sh",
+  "env": {},
+  "stdin": {
+    "session_id": "sess-aaa",
+    "cwd": "__REPO__",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "mcp__serena__find_referencing_symbols",
+    "tool_input": {
+      "name_path": "funcA",
+      "relative_path": "src/a.go"
+    },
+    "tool_response": {
+      "is_error": false,
+      "content": [{"type": "text", "text": "1 reference"}]
+    },
+    "tool_use_id": "toolu_021"
+  },
+  "expect": {
+    "exit_code": 0,
+    "state_files_created": [
+      {"name": "refs-traced.sess-aaa.json"}
+    ]
+  }
+}

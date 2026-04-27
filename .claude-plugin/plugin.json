@@ -1,10 +1,11 @@
 {
   "name": "orca-env-plugin",
-  "version": "5.0.0",
-  "description": "Orca workspace detection, advisory routing hints, and session analytics for Claude Code.",
+  "version": "6.0.0",
+  "description": "Enforced tool routing for orca repos: CBM for source reads, Serena for source writes, session analytics.",
   "author": {
     "name": "Ilya Brykau"
   },
   "homepage": "https://github.com/ilyabrykau-orca/orca-env-plugin",
-  "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin"
+  "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin",
+  "minClaudeCodeVersion": "2.1.101"
 }
