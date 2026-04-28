@@ -239,9 +239,9 @@ if [ -f "$HOOK_SAP" ]; then
 echo ""
 echo "--- skill-activation-prompt: keyword match outputs suggestion ---"
 
-# Use "create skill" which matches skill-developer keyword in skill-rules.json
+# Use "search code" which matches cbm-workflow keyword in skill-rules.json
 sap_out=""
-sap_out=$(echo '{"prompt":"I want to create skill for my project"}' \
+sap_out=$(echo '{"prompt":"I want to search code for authentication patterns"}' \
     | CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT" bash "$HOOK_SAP" 2>/dev/null) || true
 if [ -n "$sap_out" ]; then
     echo "  [PASS] outputs suggestion for keyword match"
@@ -266,6 +266,28 @@ fi
 else
 echo ""
 echo "--- skill-activation-prompt: SKIPPED (hook not yet created) ---"
+fi
+
+echo ""
+echo "--- session-start-compact ---"
+COMPACT_OUT=$(echo '{}' | bash "${PLUGIN_ROOT}/hooks/session-start-compact" 2>/dev/null) && COMPACT_EXIT=0 || COMPACT_EXIT=$?
+if [ "$COMPACT_EXIT" = "0" ]; then
+    echo "  [PASS] session-start-compact exits 0"
+    passed=$((passed+1))
+else
+    echo "  [FAIL] session-start-compact exits $COMPACT_EXIT"
+    failed=$((failed+1))
+fi
+
+echo ""
+echo "--- rtk-rewrite-bash ---"
+RTK_OUT=$(echo '{"tool_name":"Bash","tool_input":{"command":"ls"}}' | bash "${PLUGIN_ROOT}/hooks/rtk-rewrite-bash" 2>/dev/null) && RTK_EXIT=0 || RTK_EXIT=$?
+if [ "$RTK_EXIT" = "0" ]; then
+    echo "  [PASS] rtk-rewrite-bash exits 0"
+    passed=$((passed+1))
+else
+    echo "  [FAIL] rtk-rewrite-bash exits $RTK_EXIT"
+    failed=$((failed+1))
 fi
 
 echo ""
