@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # PreToolUse router: native tool blocking + Serena edit guard.
 #
-# Layer 1: Block Grep/Glob unconditionally → route to Codanna/Serena
-# Layer 2: Block Read/Edit/Write on code files → route to Serena
+# Layer 1: Block Grep/Glob unconditionally → route to CBM/Serena
+# Layer 2: Block Read/Edit/Write on code files → route to CBM/Serena
 # Layer 3: Warn on Serena edits without prior find_referencing_symbols
 #
 # ~10ms per call. Exit 0=allow, 1=warn, 2=block. Fail-open on errors.
