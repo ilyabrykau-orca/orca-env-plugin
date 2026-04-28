@@ -58,15 +58,14 @@ assert_no_native_on_code() {
     local transcript="$1"
     local test_name="$2"
     local violations
-    violations=$(echo "$transcript" | while IFS= read -r line; do
-        echo "$line" | jq -r '
-            select(.type == "assistant") |
-            .message.content[]? |
-            select(.type == "tool_use") |
-            select(.name == "Read" or .name == "Edit" or .name == "Write" or .name == "Grep" or .name == "Glob") |
-            .input.file_path // .input.pattern // "unknown"
-        ' 2>/dev/null
-    done | grep -E '\.(py|go|ts|tsx|js|jsx|rs|cpp|c|h|hpp|rb|java)$' || true)
+    violations=$(echo "$transcript" | jq -r '
+        .[]? |
+        select(.type == "assistant") |
+        .message.content[]? |
+        select(.type == "tool_use") |
+        select(.name == "Read" or .name == "Edit" or .name == "Write" or .name == "Grep" or .name == "Glob") |
+        .input.file_path // .input.pattern // "unknown"
+    ' 2>/dev/null | grep -E '\.(py|go|ts|tsx|js|jsx|rs|cpp|c|h|hpp|rb|java)$' || true)
 
     if [ -z "$violations" ]; then
         echo "  [PASS] $test_name"

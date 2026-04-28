@@ -29,7 +29,7 @@ launch_session() {
             --dangerously-skip-permissions \
             --max-turns "$max_turns" \
             --output-format json \
-            --verbose 2>&1
+            --verbose 2>/dev/null
     ) > "$output_file" || true
 
     cat "$output_file"
