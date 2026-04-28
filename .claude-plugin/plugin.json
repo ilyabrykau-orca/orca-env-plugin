@@ -1,10 +1,8 @@
 {
-  "name": "claude-toolkit",
-  "version": "1.0.0",
-  "description": "MCP tool routing, native tool enforcement, edit guards, and session analytics for Claude Code",
-  "author": {
-    "name": "Orca Security"
-  },
-  "homepage": "https://github.com/ilyabrykau-orca/claude-toolkit",
-  "repository": "https://github.com/ilyabrykau-orca/claude-toolkit"
+  "name": "orca-env-plugin",
+  "version": "7.0.0",
+  "description": "MCP tool routing, skill pedagogy, and session analytics for Claude Code in orca repos",
+  "author": { "name": "Ilya Brykau" },
+  "homepage": "https://github.com/ilyabrykau-orca/orca-env-plugin",
+  "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin"
 }
