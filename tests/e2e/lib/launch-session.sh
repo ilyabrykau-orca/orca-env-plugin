@@ -2,8 +2,8 @@
 # Launch a claude -p session with plugin-dir, capture stream-json transcript
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+_LAUNCH_SESSION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(cd "${_LAUNCH_SESSION_DIR}/../../.." && pwd)"
 
 launch_session() {
     local prompt="$1"

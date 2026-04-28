@@ -2,8 +2,8 @@
 # Routing assertion helpers for E2E tests
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "${SCRIPT_DIR}/verify-transcript.sh"
+_ASSERT_ROUTING_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${_ASSERT_ROUTING_DIR}/verify-transcript.sh"
 
 assert_tool_used() {
     local transcript="$1"
