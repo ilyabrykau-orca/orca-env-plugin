@@ -96,7 +96,12 @@ mcp__serena__rename_symbol(
 ## Reading Code
 
 ```python
-# Read symbol with source (token-efficient — preferred)
+# Read symbol source by qualified name (preferred — token efficient)
+mcp__codebase-memory-mcp__get_code_snippet(
+    qualified_name="MyClass/my_method"
+)
+
+# Pre-edit read via Serena (when you need the symbol for editing next)
 mcp__serena__find_symbol(
     name_path_pattern="MyClass/my_method",
     include_body=True,
@@ -107,13 +112,6 @@ mcp__serena__find_symbol(
 mcp__serena__get_symbols_overview(
     relative_path="orca/sensors/base.py",
     depth=1
-)
-
-# Regex search across files
-mcp__serena__search_for_pattern(
-    substring_pattern="TODO|FIXME",
-    paths_include_glob="**/*.py",
-    relative_path="orca/"
 )
 
 # Read file range (0-based lines, end_line inclusive)
