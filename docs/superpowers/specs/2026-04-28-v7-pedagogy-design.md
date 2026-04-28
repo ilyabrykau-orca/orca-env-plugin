@@ -74,10 +74,10 @@ orca-env-plugin/
 
 | # | Hook Event | Matcher | Script | Behavior |
 |---|---|---|---|---|
-| 1 | SessionStart | `startup\|resume\|clear` | `session-start` | Detect Serena project from cwd. Inject full orca-setup skill content (~120 lines) wrapped in `<EXTREMELY_IMPORTANT>`. |
-| 2 | SessionStart | `compact` | `session-start-compact` | Inject slim routing reminder (~30 lines) with tool names + key params. Survives context compaction. |
+| 1 | SessionStart | `startup\|clear` | `session-start` | Detect Serena project from cwd. Inject full orca-setup skill content (~120 lines) wrapped in `<EXTREMELY_IMPORTANT>`. |
+| 2 | SessionStart | `resume\|compact` | `session-start-compact` | Inject slim routing reminder (~30 lines) with tool names + key params. Avoids doubling pedagogy tokens on resume (original injection still in context). |
 | 3 | UserPromptSubmit | *(all)* | `skill-activation-prompt` | Match prompt keywords against skill-rules.json. Suggest cbm-workflow or serena-workflow. Exit 0 always. |
-| 4 | PreToolUse | `Read\|Edit\|Write\|Grep\|Glob\|mcp__serena__(write tools)` | `pre-tool-router` | Layer 1: Grep/Glob block + CBM suggestion. Layer 2: Read/Edit/Write on code → block + CBM/Serena suggestion. Layer 3: Serena writes → warn if refs not traced. |
+| 4 | PreToolUse | `Read\|Edit\|Write\|Grep\|Glob\|mcp__serena__(write+delete tools)` | `pre-tool-router` | Layer 1: Grep/Glob block + CBM suggestion. Layer 2: Read/Edit/Write on code → block + CBM/Serena suggestion. Layer 3: Serena writes/deletes → warn if refs not traced. |
 | 5 | PreToolUse | `Bash` | `rtk-rewrite-bash` | Rewrite eligible bash commands through RTK. Exit 0 always (rewrite, never block). |
 | 6 | PostToolUse | `find_referencing_symbols` | `post-serena-refs` | Record traced file + session_id to state/refs-traced.json. Exit 0 always. |
 | 7 | Stop | *(all)* | `stop.js` | Parse transcript, write stats to logs/stats/sessions.jsonl. |
@@ -90,11 +90,11 @@ orca-env-plugin/
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear",
+        "matcher": "startup|clear",
         "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/session-start'", "async": false }]
       },
       {
-        "matcher": "compact",
+        "matcher": "resume|compact",
         "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/session-start-compact'", "async": false }]
       }
     ],
@@ -105,7 +105,7 @@ orca-env-plugin/
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write|Grep|Glob|mcp__serena__(replace_symbol_body|replace_content|insert_after_symbol|insert_before_symbol|rename_symbol)",
+        "matcher": "Read|Edit|Write|Grep|Glob|mcp__serena__(replace_symbol_body|replace_content|insert_after_symbol|insert_before_symbol|rename_symbol|safe_delete_symbol)",
         "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-router'", "timeout": 5 }]
       },
       {
@@ -131,6 +131,39 @@ orca-env-plugin/
     ]
   }
 }
+```
+
+### State file lifecycle: refs-traced.json
+
+The `post-serena-refs` hook writes to `${CLAUDE_PLUGIN_ROOT}/state/refs-traced.json`. Lifecycle:
+- **Creation:** `mkdir -p` on first write. No pre-setup needed.
+- **Session reset:** When `session_id` changes, the entire traced map is replaced (not appended). This handles session boundaries automatically.
+- **Cleanup:** The file persists across sessions but is effectively reset on each new session_id. No explicit cleanup needed — the file stays small (one entry per traced file per session).
+
+### Compact injection content (verbatim)
+
+The `session-start-compact` hook injects this exact content on `resume|compact`:
+
+```
+<tool_routing>
+ROUTING RULES (post-compaction reminder):
+
+Source code SEARCH: mcp__codebase-memory-mcp__search_code(pattern=, project=), search_graph(query=, project=), get_code_snippet(qualified_name=), trace_path(source=, target=, project=), get_architecture(project=)
+Source code EDIT: mcp__serena__replace_symbol_body(name_path=, relative_path=, body=), replace_content(relative_path=, needle=, repl=, mode=), insert_after_symbol, insert_before_symbol, rename_symbol, safe_delete_symbol
+Pre-edit MANDATORY: mcp__serena__find_referencing_symbols(name_path=, relative_path=FILE) before any edit/delete
+Non-code files (.json .yaml .md .toml .sh Makefile Dockerfile): native Read/Edit/Write allowed
+NEVER: native Read/Edit/Write/Grep/Glob on source files (.py .go .ts .tsx .js .jsx .rs .cpp .c .h .hpp .rb .java)
+
+Key params:
+- search_code: pattern (not query), project required
+- get_code_snippet: qualified_name (not relative_path+start_line)
+- replace_content: needle/repl/mode ("literal"|"regex"), backrefs $!1 (not \1)
+- read_file: 0-based lines, end_line inclusive
+- find_referencing_symbols: relative_path must be a FILE, not a directory
+
+Start multi-symbol exploration with get_architecture(project=...) — one call replaces 4-6 round-trips.
+Batch all independent tool calls in one message.
+</tool_routing>
 ```
 
 ### What was removed from v6
@@ -218,8 +251,8 @@ Invocable as `/orca-dev`. Always-on reference.
       "promptTriggers": {
         "keywords": ["search code", "find symbol", "find function", "find class",
                      "who calls", "what calls", "callers", "call graph",
-                     "trace", "architecture", "explore code", "investigate",
-                     "understand code", "how does", "impact", "use cbm"]
+                     "trace callers", "trace path", "architecture", "explore code",
+                     "investigate", "understand code", "how does", "impact", "use cbm"]
       }
     },
     "serena-workflow": {
@@ -309,6 +342,15 @@ Time ->
 - First transcript: session start injected orca-unified activation
 - helm-yaml: uses native Read/Edit on .yaml (control case — proves no over-blocking)
 - RTK: any Bash with git/grep/find shows rtk rewrite
+
+**Non-determinism handling:**
+
+LLM-based tests are inherently non-deterministic. Mitigations:
+- **Retry per segment:** Each transcript segment retries up to 3 times before marking as failed. A single pass counts as success.
+- **Pass threshold per project:** 3 of 4 segments must pass for the project to pass. The "verify" segment (Bash test commands) is deterministic and should always pass on first try.
+- **Negative assertions are strong:** "must NOT use native Grep" is reliable — the hook blocks it with exit 2, so the model physically cannot succeed with it. These never flake.
+- **Positive assertions are weaker:** "must use CBM search_code" could flake if the model uses a different CBM tool (e.g., search_graph instead of search_code). Assert at the namespace level (`mcp__codebase-memory-mcp__`) not the exact tool level for explore segments.
+- **Transcript logging:** All transcripts are saved to `tests/e2e/results/` for post-mortem analysis on failures.
 
 **E2E file structure:**
 
