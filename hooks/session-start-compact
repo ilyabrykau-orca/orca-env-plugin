@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# SessionStart compact/resume handler: inject slim routing reminder.
+set -euo pipefail
+
+ROUTING_CONTENT='<tool_routing>
+ROUTING RULES (post-compaction reminder):
+
+Source code SEARCH: mcp__codebase-memory-mcp__search_code(pattern=, project=), search_graph(query=, project=), get_code_snippet(qualified_name=), trace_path(source=, target=, project=), get_architecture(project=)
+Source code EDIT: mcp__serena__replace_symbol_body(name_path=, relative_path=, body=), replace_content(relative_path=, needle=, repl=, mode=), insert_after_symbol, insert_before_symbol, rename_symbol, safe_delete_symbol
+Pre-edit MANDATORY: mcp__serena__find_referencing_symbols(name_path=, relative_path=FILE) before any edit/delete
+Non-code files (.json .yaml .md .toml .sh Makefile Dockerfile): native Read/Edit/Write allowed
+NEVER: native Read/Edit/Write/Grep/Glob on source files (.py .go .ts .tsx .js .jsx .rs .cpp .c .h .hpp .rb .java)
+
+Key params:
+- search_code: pattern (not query), project required
+- get_code_snippet: qualified_name (not relative_path+start_line)
+- replace_content: needle/repl/mode ("literal"|"regex"), backrefs $!1 (not \1)
+- read_file: 0-based lines, end_line inclusive
+- find_referencing_symbols: relative_path must be a FILE, not a directory
+
+Start multi-symbol exploration with get_architecture(project=...) — one call replaces 4-6 round-trips.
+Batch all independent tool calls in one message.
+</tool_routing>'
+
+JQ=$(command -v jq 2>/dev/null || command -v jaq 2>/dev/null) || {
+  echo '{"additional_context":"","hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":""}}'
+  exit 0
+}
+
+"$JQ" -n --arg ctx "$ROUTING_CONTENT" \
+  '{"additional_context": $ctx,
+    "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": $ctx}}'
+
+exit 0
