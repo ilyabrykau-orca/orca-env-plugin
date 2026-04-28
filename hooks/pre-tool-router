@@ -22,10 +22,10 @@ parsed=$(printf '%s' "$input" | "$JQ" -r \
 # ═══════════════════════════════════════════════════════════════════════
 case "$tool_name" in
   Grep)
-    echo "BLOCKED: Native Grep. Use mcp__codanna__semantic_search_with_context or mcp__serena__search_for_pattern." >&2
+    echo "BLOCKED: Native Grep. Use mcp__codebase-memory-mcp__search_code or mcp__serena__search_for_pattern." >&2
     exit 2 ;;
   Glob)
-    echo "BLOCKED: Native Glob. Use mcp__codanna__search_symbols or mcp__serena__find_file." >&2
+    echo "BLOCKED: Native Glob. Use mcp__codebase-memory-mcp__search_graph or mcp__serena__find_file." >&2
     exit 2 ;;
 esac
 
@@ -39,7 +39,7 @@ case "$tool_name" in
         *.py|*.go|*.ts|*.tsx|*.js|*.jsx|*.rs|*.cpp|*.c|*.h|*.hpp|*.rb|*.java|*.kt|*.php|*.scala|*.swift|*.sh|*.bash)
           case "$tool_name" in
             Read)
-              echo "BLOCKED: Native Read on '$file_path'. Use mcp__serena__find_symbol(include_body=True) or mcp__serena__read_file." >&2 ;;
+              echo "BLOCKED: Native Read on '$file_path'. Use mcp__codebase-memory-mcp__get_code_snippet or mcp__serena__find_symbol(include_body=True)." >&2 ;;
             Edit|Write)
               echo "BLOCKED: Native $tool_name on '$file_path'. Use mcp__serena__replace_symbol_body or mcp__serena__replace_content." >&2 ;;
           esac
@@ -57,7 +57,8 @@ case "$tool_name" in
   mcp__serena__replace_content|\
   mcp__serena__insert_after_symbol|\
   mcp__serena__insert_before_symbol|\
-  mcp__serena__rename_symbol)
+  mcp__serena__rename_symbol|\
+  mcp__serena__safe_delete_symbol)
     if [[ -n "$relative_path" ]]; then
       STATE_FILE="${CLAUDE_PLUGIN_ROOT:-/tmp}/state/refs-traced.json"
       if [[ -f "$STATE_FILE" ]]; then
