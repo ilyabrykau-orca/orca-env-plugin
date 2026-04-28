@@ -16,6 +16,8 @@ echo ""
 # Test from orca dir (using sandbox)
 output=$(run_hook_from "$SANDBOX/src/orca")
 
+echo "--- From sandbox orca dir ---"
+
 if assert_valid_json "$output" "output is valid JSON"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
@@ -34,10 +36,19 @@ fi
 if assert_contains "$output" "mcp__serena__activate_project" "contains Serena activation call"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
-if assert_contains "$output" "mcp__codanna__" "contains Codanna tool references"; then
+if assert_contains "$output" "mcp__codebase-memory-mcp__" "contains CBM tool references"; then
+    passed=$((passed+1)); else failed=$((failed+1))
+fi
+if assert_not_contains "$output" "mcp__codanna__" "does not contain codanna references"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
 if assert_contains "$output" "find_referencing_symbols" "contains find_referencing_symbols mandate"; then
+    passed=$((passed+1)); else failed=$((failed+1))
+fi
+if assert_contains "$output" "search_code" "contains search_code reference"; then
+    passed=$((passed+1)); else failed=$((failed+1))
+fi
+if assert_contains "$output" "get_code_snippet" "contains get_code_snippet reference"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
 
