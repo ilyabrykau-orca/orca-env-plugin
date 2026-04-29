@@ -1,14 +1,7 @@
 .DS_Store
 .idea/
+.serena/
 logs/
 state/
 node_modules/
 *.tmp
-
-# Build artifacts
-dist/
-*.bun-build
-*.js.map
-.serena/cache/
-.serena/.gitignore
-.serena/project.local.yml

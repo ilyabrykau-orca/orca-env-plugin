@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# UserPromptSubmit: suggest skills when prompt matches keywords.
+# Reads skill-rules.json, checks keywords against prompt.
+# Exit 0 always (informational, never blocks).
+trap 'exit 0' EXIT
+
+JQ=$(command -v jq 2>/dev/null || command -v jaq 2>/dev/null) || exit 0
+RULES="${CLAUDE_PLUGIN_ROOT:-/dev/null}/skills/skill-rules.json"
+[[ -f "$RULES" ]] || exit 0
+
+prompt=$(</dev/stdin) 2>/dev/null || exit 0
+prompt=$(printf '%s' "$prompt" | "$JQ" -r '(.prompt // .user_prompt // "") | ascii_downcase' 2>/dev/null) || exit 0
+[[ -n "$prompt" ]] || exit 0
+
+# One jq call: for each skill, check if any keyword is in the prompt.
+# Output: matched skill names with priority, one per line.
+matches=$("$JQ" -r --arg p "$prompt" '
+  .skills | to_entries[] |
+  select(.value.promptTriggers.keywords != null) |
+  select(.value.promptTriggers.keywords | map(ascii_downcase) | any(. as $kw | $p | contains($kw))) |
+  "\(.value.priority // "medium")\t\(.key)"
+' "$RULES" 2>/dev/null) || exit 0
+
+[[ -n "$matches" ]] || exit 0
+
+# Format output grouped by priority
+output="SKILL ACTIVATION CHECK\n"
+for level in critical high medium low; do
+  names=$(echo "$matches" | grep "^${level}" | cut -f2)
+  [[ -n "$names" ]] || continue
+  case "$level" in
+    critical) output+="REQUIRED: " ;;
+    high)     output+="RECOMMENDED: " ;;
+    medium)   output+="SUGGESTED: " ;;
+    low)      output+="OPTIONAL: " ;;
+  esac
+  output+="$(echo "$names" | tr '\n' ', ' | sed 's/, $//')\n"
+done
+output+="ACTION: Use Skill tool BEFORE responding"
+
+printf "%b\n" "$output"

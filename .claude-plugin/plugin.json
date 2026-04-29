@@ -1,11 +1,8 @@
 {
   "name": "orca-env-plugin",
-  "version": "6.0.0",
-  "description": "Enforced tool routing for orca repos: CBM for source reads, Serena for source writes, session analytics.",
-  "author": {
-    "name": "Ilya Brykau"
-  },
+  "version": "7.0.0",
+  "description": "MCP tool routing, skill pedagogy, and session analytics for Claude Code in orca repos",
+  "author": { "name": "Ilya Brykau" },
   "homepage": "https://github.com/ilyabrykau-orca/orca-env-plugin",
-  "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin",
-  "minClaudeCodeVersion": "2.1.101"
+  "repository": "https://github.com/ilyabrykau-orca/orca-env-plugin"
 }

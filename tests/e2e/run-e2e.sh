@@ -1,47 +1,64 @@
 #!/usr/bin/env bash
+# E2E test runner: parallel project matrix
+# Usage: E2E=1 bash tests/e2e/run-e2e.sh
 set -euo pipefail
 
-PLUGIN_ROOT="${1:-$(pwd)}"
-PROMPTS="${2:-$PLUGIN_ROOT/tests/e2e/prompts.json}"
-RUNS="${RUNS:-3}"
-MODEL="${MODEL:-claude-haiku-4-5-20251001}"
-REPO="${REPO:-/tmp/e2e-test-repo}"
+if [ "${E2E:-0}" != "1" ]; then
+    echo "E2E tests skipped (set E2E=1 to run)"
+    exit 0
+fi
 
-mkdir -p "$REPO/src/app" "$REPO/src/service" "$REPO/vendor" "$REPO/docs"
+if ! command -v claude &>/dev/null; then
+    echo "ERROR: claude CLI not found"
+    exit 1
+fi
 
-count=0; failed=0
-while IFS= read -r prompt_obj; do
-  id=$(jq -r '.id' <<<"$prompt_obj")
-  raw_prompt=$(jq -r '.prompt' <<<"$prompt_obj")
-  prompt="${raw_prompt//__REPO__/$REPO}"
-  runs=$(jq -r --arg d "$RUNS" '.runs // $d' <<<"$prompt_obj")
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+RESULTS_DIR="${SCRIPT_DIR}/results"
+mkdir -p "$RESULTS_DIR"
 
-  for _ in $(seq 1 "$runs"); do
-    count=$((count+1))
-    transcript=$(mktemp)
-    claude -p "$prompt" \
-      --model "$MODEL" \
-      --permission-mode default \
-      --setting-sources project \
-      --output-format stream-json \
-      --verbose \
-      --mcp-config "$PLUGIN_ROOT/tests/.mcp.json" \
-      --append-system-prompt "Test harness: obey plugin routing. Execute the task." \
-      > "$transcript" 2>&1 || true
+echo "========================================"
+echo " E2E Test Matrix"
+echo "========================================"
+echo "Date: $(date)"
+echo "Results: $RESULTS_DIR"
+echo ""
 
-    if ! python3 "$PLUGIN_ROOT/tests/e2e/assert-tools.py" \
-           --transcript "$transcript" \
-           --spec "$prompt_obj" \
-           --repo "$REPO"; then
-      echo "FAIL e2e $id" >&2
-      failed=$((failed+1))
-    else
-      echo "PASS e2e $id"
-    fi
-    rm -f "$transcript"
-  done
-done < <(jq -c '.[]' "$PROMPTS")
+pids=()
+tests=()
+
+for test_file in "${SCRIPT_DIR}/matrix"/*.sh; do
+    [ -f "$test_file" ] || continue
+    test_name=$(basename "$test_file" .sh)
+    tests+=("$test_name")
+    echo "Launching: $test_name"
+    bash "$test_file" > "${RESULTS_DIR}/${test_name}.log" 2>&1 &
+    pids+=($!)
+done
 
 echo ""
-echo "[e2e] $((count-failed))/$count passed" >&2
-[[ "$failed" -eq 0 ]]
+echo "Waiting for ${#pids[@]} parallel tests..."
+echo ""
+
+failures=0
+for i in "${!pids[@]}"; do
+    if wait "${pids[$i]}"; then
+        echo "[PASS] ${tests[$i]}"
+    else
+        echo "[FAIL] ${tests[$i]} (see ${RESULTS_DIR}/${tests[$i]}.log)"
+        failures=$((failures+1))
+    fi
+done
+
+echo ""
+echo "========================================"
+echo "Matrix: ${#tests[@]} projects, $failures failures"
+echo "========================================"
+
+if [ $failures -eq 0 ]; then
+    echo "STATUS: PASSED"
+    exit 0
+else
+    echo "STATUS: FAILED"
+    exit 1
+fi

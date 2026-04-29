@@ -1,0 +1,27 @@
+{
+  "skills": {
+    "cbm-workflow": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "description": "CBM code intelligence for searching and understanding code",
+      "promptTriggers": {
+        "keywords": ["search code", "find symbol", "find function", "find class",
+                     "who calls", "what calls", "callers", "call graph",
+                     "trace callers", "trace path", "architecture", "explore code",
+                     "investigate", "understand code", "how does", "impact", "use cbm"]
+      }
+    },
+    "serena-workflow": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "description": "Serena editing workflow for modifying code",
+      "promptTriggers": {
+        "keywords": ["edit code", "refactor", "rename", "replace", "insert",
+                     "modify function", "change method", "fix bug", "add method",
+                     "use serena", "edit symbol", "replace content"]
+      }
+    }
+  }
+}
