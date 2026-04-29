@@ -10,7 +10,10 @@
   "plugins": [
     {
       "name": "orca-env-plugin",
-      "source": ".",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/ilyabrykau-orca/orca-env-plugin.git"
+      },
       "description": "MCP tool routing, skill pedagogy, and session analytics for Claude Code in orca repos",
       "version": "7.0.0"
     }
