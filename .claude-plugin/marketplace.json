@@ -1,0 +1,21 @@
+{
+  "name": "Orca-Env-Plugin-Marketplace",
+  "owner": {
+    "name": "Ilya Brykau"
+  },
+  "metadata": {
+    "description": "MCP tool routing for orca repos",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "orca-env-plugin",
+      "source": {
+        "source": "directory",
+        "path": "."
+      },
+      "description": "MCP tool routing, skill pedagogy, and session analytics for Claude Code in orca repos",
+      "version": "7.0.0"
+    }
+  ]
+}
