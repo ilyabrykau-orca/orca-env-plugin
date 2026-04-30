@@ -1,6 +1,6 @@
 {
   "name": "orca-env-plugin",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "description": "MCP tool routing, skill pedagogy, and session analytics for Claude Code in orca repos",
   "author": { "name": "Ilya Brykau" },
   "homepage": "https://github.com/ilyabrykau-orca/orca-env-plugin",
