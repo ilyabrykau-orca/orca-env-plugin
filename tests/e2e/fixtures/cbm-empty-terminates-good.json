@@ -1,0 +1,5 @@
+[
+  {"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__codebase-memory-mcp__search_code","id":"cbm1","input":{"pattern":"nonexistent_symbol_xyz","project":"Users-ilyabrykau-src-orca-runtime-sensor"}}]}},
+  {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"cbm1","content":[{"type":"text","text":"{\"results\":[]}"}]}]}},
+  {"type":"assistant","message":{"content":[{"type":"text","text":"I searched the codebase but found no matches for that symbol. It does not appear to exist in the project."}]}}
+]

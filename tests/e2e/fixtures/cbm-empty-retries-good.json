@@ -1,0 +1,8 @@
+[
+  {"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__codebase-memory-mcp__search_code","id":"cbm1","input":{"pattern":"containermonitor allocation","project":"orca-runtime-sensor"}}]}},
+  {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"cbm1","content":[{"type":"text","text":"Project 'orca-runtime-sensor' not found. Available projects: Users-ilyabrykau-src-orca-runtime-sensor, Users-ilyabrykau-src-orca, ..."}]}]}},
+  {"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__codebase-memory-mcp__list_projects","id":"cbm2","input":{}}]}},
+  {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"cbm2","content":[{"type":"text","text":"{\"projects\":[{\"name\":\"Users-ilyabrykau-src-orca-runtime-sensor\"}]}"}]}]}},
+  {"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__codebase-memory-mcp__search_code","id":"cbm3","input":{"pattern":"containermonitor allocation","project":"Users-ilyabrykau-src-orca-runtime-sensor"}}]}},
+  {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"cbm3","content":[{"type":"text","text":"{\"results\":[{\"file\":\"pkg/containermonitor/monitor.go\",\"line\":42,\"snippet\":\"func (cm *ContainerMonitor) allocateBuffer()\"}]}"}]}]}}
+]

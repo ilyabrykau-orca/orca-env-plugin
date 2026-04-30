@@ -110,11 +110,11 @@ if [ -f "$HOOKS_JSON" ]; then
 
     # PreToolUse must have 2 entries (router + rtk-rewrite-bash)
     pretool_count=$(echo "$hooks_content" | jq '.hooks.PreToolUse | length' 2>/dev/null || echo "0")
-    if [ "$pretool_count" -eq 2 ]; then
-        echo "  [PASS] PreToolUse has 2 entries (router + rtk-rewrite-bash)"
+    if [ "$pretool_count" -eq 3 ]; then
+        echo "  [PASS] PreToolUse has 3 entries (router + serena-read-guard + rtk-rewrite-bash)"
         passed=$((passed+1))
     else
-        echo "  [FAIL] PreToolUse: expected 2 entries, got $pretool_count"
+        echo "  [FAIL] PreToolUse: expected 3 entries, got $pretool_count"
         failed=$((failed+1))
     fi
 

@@ -9,10 +9,12 @@
     ],
     "PreToolUse": [
       { "matcher": "Read|Edit|Write|Grep|Glob|mcp__serena__(replace_symbol_body|replace_content|insert_after_symbol|insert_before_symbol|rename_symbol|safe_delete_symbol)", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-router'", "timeout": 5 }] },
+      { "matcher": "mcp__serena__(find_symbol|get_symbols_overview|search_for_pattern|read_file|list_dir|find_file)", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/pre-serena-read-guard.sh'", "timeout": 5 }] },
       { "matcher": "Bash", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/rtk-rewrite-bash'", "timeout": 5 }] }
     ],
     "PostToolUse": [
-      { "matcher": "mcp__serena__find_referencing_symbols", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-serena-refs'", "timeout": 5 }] }
+      { "matcher": "mcp__serena__find_referencing_symbols", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-serena-refs'", "timeout": 5 }] },
+      { "matcher": "mcp__codebase-memory-mcp__(search_code|search_graph|get_code_snippet|trace_path|query_graph|get_architecture|get_graph_schema|detect_changes)", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-cbm-read-record.sh'", "timeout": 5 }] }
     ],
     "Stop": [
       { "hooks": [{ "type": "command", "command": "node '${CLAUDE_PLUGIN_ROOT}/hooks/stop.js'", "timeout": 30 }] }

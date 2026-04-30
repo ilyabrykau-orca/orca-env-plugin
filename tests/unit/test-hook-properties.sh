@@ -92,11 +92,11 @@ echo ""
 echo "--- hooks.json: PreToolUse entries ---"
 
 PT_COUNT=$(jq '.hooks.PreToolUse | length' "$HOOKS_JSON" 2>/dev/null)
-if [ "$PT_COUNT" = "2" ]; then
-    echo "  [PASS] hooks.json has 2 PreToolUse entries"
+if [ "$PT_COUNT" = "3" ]; then
+    echo "  [PASS] hooks.json has 3 PreToolUse entries"
     passed=$((passed+1))
 else
-    echo "  [FAIL] hooks.json has $PT_COUNT PreToolUse entries (expected 2)"
+    echo "  [FAIL] hooks.json has $PT_COUNT PreToolUse entries (expected 3)"
     failed=$((failed+1))
 fi
 

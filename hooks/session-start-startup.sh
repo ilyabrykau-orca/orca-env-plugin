@@ -35,6 +35,15 @@ Mandatory routing. Re-read before each tool call on source code.
 - Exempt: vendor/ third_party/ generated/ node_modules/ dist/ build/
 - Hooks + permissions.deny enforce these rules at runtime.
 - Batch independent tool calls in parallel.
+
+CRITICAL — CBM empty-result recovery:
+  If CBM returns empty ("results":[], 0 results, project not found):
+  1. Run list_projects() to verify project name. Use full path form: "Users-ilyabrykau-src-<name>"
+  2. Broaden pattern — drop path_filter, shorten to concrete symbol names
+  3. Switch tool — try get_architecture, search_graph(file CONTAINS '...'), get_code_snippet
+  4. ONLY after all CBM avenues exhausted: Serena reads as last resort
+  NEVER use Serena find_symbol or get_symbols_overview as first exploration.
+  NEVER fall back to Serena reads after a single empty CBM result.
 </tool_routing>
 
 If CBM index is missing or stale: run mcp__codebase-memory-mcp__index_repository first.
