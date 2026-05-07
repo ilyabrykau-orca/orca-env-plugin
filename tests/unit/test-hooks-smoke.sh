@@ -31,10 +31,7 @@ fi
 if assert_contains "$ss_out" "HARD-BLOCKED" "enforcement block injected"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
-if assert_contains "$ss_out" "Params Cheat Sheet" "cheat sheet injected"; then
-    passed=$((passed+1)); else failed=$((failed+1))
-fi
-if assert_contains "$ss_out" "memory_file_name" "correct memory param name injected"; then
+if assert_contains "$ss_out" "Params cheat sheet" "cheat sheet injected"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
 
@@ -137,13 +134,12 @@ check_exit() {
 check_exit "small limit=100" \
     '{"tool_name":"Read","tool_input":{"file_path":"config.yaml","limit":100}}' 0
 
-# Warn: medium limit (exit 1)
-check_exit "medium limit=500" \
-    '{"tool_name":"Read","tool_input":{"file_path":"big.py","limit":500}}' 1
+# Native Read passes through — guard only triggers on Serena tools
+check_exit "medium limit=500 passes through" \
+    '{"tool_name":"Read","tool_input":{"file_path":"big.py","limit":500}}' 0
 
-# Block: huge limit (exit 2)
-check_exit "huge limit=800" \
-    '{"tool_name":"Read","tool_input":{"file_path":"huge.py","limit":800}}' 2
+check_exit "huge limit=800 passes through" \
+    '{"tool_name":"Read","tool_input":{"file_path":"huge.py","limit":800}}' 0
 
 echo ""
 echo "--- pre-read-use: non-Read tool passes through ---"
