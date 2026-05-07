@@ -17,25 +17,21 @@ REL_PATH=$(jq -r '.tool_input.relative_path // empty' <<<"$INPUT")
 SESSION_ID=$(jq -r '.session_id // empty' <<<"$INPUT")
 [[ -z "$REL_PATH" || -z "$SESSION_ID" ]] && exit 0
 
-STATE_DIR="${CLAUDE_PLUGIN_DATA:-${CLAUDE_PLUGIN_ROOT}/state}"
-STATE_FILE="$STATE_DIR/refs-traced.${SESSION_ID}.json"
+STATE_DIR="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}/state"
+STATE_FILE="$STATE_DIR/refs-traced.json"
 
 DENY=1
 if [[ -f "$STATE_FILE" ]]; then
-  HAS=$(jq --arg p "$REL_PATH" '.traced[$p] // null' "$STATE_FILE" 2>/dev/null)
+  HAS=$(jq --arg p "$REL_PATH" --arg sid "$SESSION_ID" \
+    'if .session_id == $sid then (.traced[$p] // null) else null end' \
+    "$STATE_FILE" 2>/dev/null)
   [[ "$HAS" != "null" ]] && DENY=0
 fi
 
 if [[ "$DENY" == "1" ]]; then
   REASON="${TOOL} on '${REL_PATH}' is blocked: no mcp__serena__find_referencing_symbols recorded for this file in the current session. Call mcp__serena__find_referencing_symbols(name_path=<symbol>, relative_path=${REL_PATH}) first, then retry the edit."
   printf '%s\n' "$REASON" >&2
-  jq -n --arg r "$REASON" '{
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "deny",
-      permissionDecisionReason: $r
-    }
-  }'
+  jq -n --arg r "$REASON" '{"permissionDecision": "deny", "permissionDecisionReason": $r}'
   exit 2
 fi
 exit 0

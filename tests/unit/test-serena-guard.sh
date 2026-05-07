@@ -11,12 +11,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../helpers.sh"
 
-HOOK_EDIT="${PLUGIN_ROOT}/hooks/pre-serena-edit"
+HOOK_EDIT="${PLUGIN_ROOT}/hooks/pre-serena-edit-guard.sh"
 HOOK_REFS="${PLUGIN_ROOT}/hooks/post-serena-refs"
 
 # Skip gracefully if hooks not yet created by the other agent
 if [ ! -f "$HOOK_EDIT" ] || [ ! -f "$HOOK_REFS" ]; then
-    echo "=== Unit: serena-guard — SKIPPED (hooks not yet created) ==="
+    echo "=== Unit: serena-guard — SKIPPED (hooks not found) ==="
     [ ! -f "$HOOK_EDIT" ] && echo "  Missing: $HOOK_EDIT"
     [ ! -f "$HOOK_REFS" ] && echo "  Missing: $HOOK_REFS"
     exit 0
@@ -45,7 +45,7 @@ echo "--- post-serena-refs creates state file ---"
 
 rc=0
 echo "{\"tool_name\":\"mcp__serena__find_referencing_symbols\",\"tool_input\":{\"name_path\":\"MyClass\",\"relative_path\":\"src/models.py\"},\"session_id\":\"$SESSION_ID\"}" \
-    | CLAUDE_PLUGIN_ROOT="$GUARD_TMPROOT" bash "$HOOK_REFS" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="$GUARD_TMPROOT" bash "$HOOK_REFS" >/dev/null 2>&1 || rc=$?
 
 if [ "$rc" -eq 0 ]; then
     echo "  [PASS] post-serena-refs exits 0"
@@ -72,7 +72,7 @@ echo "--- pre-serena-edit allows after refs traced ---"
 
 rc=0
 echo "{\"tool_name\":\"mcp__serena__replace_symbol_body\",\"tool_input\":{\"name_path\":\"MyClass/my_method\",\"relative_path\":\"src/models.py\",\"body\":\"pass\"},\"session_id\":\"$SESSION_ID\"}" \
-    | CLAUDE_PLUGIN_ROOT="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
 
 if [ "$rc" -eq 0 ]; then
     echo "  [PASS] edit allowed after refs traced (exit 0)"
@@ -85,7 +85,7 @@ fi
 # Also test replace_content
 rc=0
 echo "{\"tool_name\":\"mcp__serena__replace_content\",\"tool_input\":{\"relative_path\":\"src/models.py\",\"needle\":\"old\",\"repl\":\"new\",\"mode\":\"literal\"},\"session_id\":\"$SESSION_ID\"}" \
-    | CLAUDE_PLUGIN_ROOT="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
 
 if [ "$rc" -eq 0 ]; then
     echo "  [PASS] replace_content allowed after refs traced (exit 0)"
@@ -98,7 +98,7 @@ fi
 # Also test insert_after_symbol
 rc=0
 echo "{\"tool_name\":\"mcp__serena__insert_after_symbol\",\"tool_input\":{\"name_path\":\"MyClass\",\"relative_path\":\"src/models.py\",\"body\":\"def new_method(): pass\"},\"session_id\":\"$SESSION_ID\"}" \
-    | CLAUDE_PLUGIN_ROOT="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
 
 if [ "$rc" -eq 0 ]; then
     echo "  [PASS] insert_after_symbol allowed after refs traced (exit 0)"
@@ -108,10 +108,10 @@ else
     failed=$((failed+1))
 fi
 
-# ── 3. pre-serena-edit warns without refs ────────────────────────────────────
+# ── 3. pre-serena-edit denies without refs ───────────────────────────────────
 
 echo ""
-echo "--- pre-serena-edit warns without refs ---"
+echo "--- pre-serena-edit denies without refs ---"
 
 # Use a fresh temp root that has no state directory
 FRESH_TMPROOT=$(mktemp -d)
@@ -119,13 +119,13 @@ FRESH_SESSION="fresh-no-refs-$$"
 
 rc=0
 stderr_out=$(echo "{\"tool_name\":\"mcp__serena__replace_symbol_body\",\"tool_input\":{\"name_path\":\"Foo\",\"relative_path\":\"bar.py\",\"body\":\"pass\"},\"session_id\":\"$FRESH_SESSION\"}" \
-    | CLAUDE_PLUGIN_ROOT="$FRESH_TMPROOT" bash "$HOOK_EDIT" 2>&1) || rc=$?
+    | CLAUDE_PLUGIN_DATA="$FRESH_TMPROOT" bash "$HOOK_EDIT" 2>&1) || rc=$?
 
-if [ "$rc" -eq 1 ]; then
-    echo "  [PASS] warns without refs (exit 1)"
+if [ "$rc" -eq 2 ]; then
+    echo "  [PASS] denies without refs (exit 2)"
     passed=$((passed+1))
 else
-    echo "  [FAIL] expected exit 1 without refs, got $rc"
+    echo "  [FAIL] expected exit 2 without refs, got $rc"
     failed=$((failed+1))
 fi
 
@@ -135,6 +135,25 @@ if echo "$stderr_out" | /usr/bin/grep -qi "ref\|find_referencing"; then
     passed=$((passed+1))
 else
     echo "  [FAIL] warning should mention refs: $stderr_out"
+    failed=$((failed+1))
+fi
+
+deny_out=$(echo "{\"tool_name\":\"mcp__serena__replace_symbol_body\",\"tool_input\":{\"name_path\":\"Foo\",\"relative_path\":\"bar.py\",\"body\":\"pass\"},\"session_id\":\"$FRESH_SESSION\"}" \
+    | CLAUDE_PLUGIN_DATA="$FRESH_TMPROOT" bash "$HOOK_EDIT" 2>/dev/null || true)
+
+if echo "$deny_out" | jq -e '.permissionDecision == "deny"' >/dev/null 2>&1; then
+    echo "  [PASS] deny output has top-level permissionDecision"
+    passed=$((passed+1))
+else
+    echo "  [FAIL] deny output missing top-level permissionDecision: ${deny_out:0:200}"
+    failed=$((failed+1))
+fi
+
+if echo "$deny_out" | jq -e '.permissionDecisionReason | length > 0' >/dev/null 2>&1; then
+    echo "  [PASS] deny output has permissionDecisionReason"
+    passed=$((passed+1))
+else
+    echo "  [FAIL] deny output missing permissionDecisionReason"
     failed=$((failed+1))
 fi
 
@@ -151,13 +170,13 @@ DIFFERENT_SESSION="different-session-$$"
 
 rc=0
 echo "{\"tool_name\":\"mcp__serena__replace_symbol_body\",\"tool_input\":{\"name_path\":\"Baz\",\"relative_path\":\"src/models.py\",\"body\":\"pass\"},\"session_id\":\"$DIFFERENT_SESSION\"}" \
-    | CLAUDE_PLUGIN_ROOT="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="$GUARD_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
 
-if [ "$rc" -eq 1 ]; then
-    echo "  [PASS] different session has no refs state (exit 1)"
+if [ "$rc" -eq 2 ]; then
+    echo "  [PASS] different session has no refs state (exit 2)"
     passed=$((passed+1))
 else
-    echo "  [FAIL] different session expected exit 1, got $rc"
+    echo "  [FAIL] different session expected exit 2, got $rc"
     failed=$((failed+1))
 fi
 
@@ -173,7 +192,7 @@ ATOMIC_SESSION="atomic-test-$$"
 # Run post-serena-refs multiple times rapidly in parallel
 for i in 1 2 3 4 5; do
     echo "{\"tool_name\":\"mcp__serena__find_referencing_symbols\",\"tool_input\":{\"name_path\":\"Func$i\",\"relative_path\":\"file$i.py\"},\"session_id\":\"$ATOMIC_SESSION\"}" \
-        | CLAUDE_PLUGIN_ROOT="$ATOMIC_TMPROOT" bash "$HOOK_REFS" >/dev/null 2>&1 &
+        | CLAUDE_PLUGIN_DATA="$ATOMIC_TMPROOT" bash "$HOOK_REFS" >/dev/null 2>&1 &
 done
 wait
 
@@ -207,7 +226,7 @@ fi
 if [ -n "$survived_path" ]; then
     rc=0
     echo "{\"tool_name\":\"mcp__serena__replace_content\",\"tool_input\":{\"relative_path\":\"$survived_path\",\"needle\":\"a\",\"repl\":\"b\",\"mode\":\"literal\"},\"session_id\":\"$ATOMIC_SESSION\"}" \
-        | CLAUDE_PLUGIN_ROOT="$ATOMIC_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
+        | CLAUDE_PLUGIN_DATA="$ATOMIC_TMPROOT" bash "$HOOK_EDIT" >/dev/null 2>&1 || rc=$?
 
     if [ "$rc" -eq 0 ]; then
         echo "  [PASS] edit allowed for surviving path after concurrent refs (exit 0)"
