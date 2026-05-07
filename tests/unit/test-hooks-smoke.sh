@@ -115,7 +115,7 @@ echo ""
 
 # ── pre-read-use ─────────────────────────────────────────────────────────────
 
-HOOK_PR="${PLUGIN_ROOT}/hooks/pre-read-use"
+HOOK_PR="${PLUGIN_ROOT}/hooks/pre-serena-read-guard.sh"
 
 if [ -f "$HOOK_PR" ]; then
 echo "--- pre-read-use: allow small read ---"
@@ -156,7 +156,7 @@ fi
 
 # ── pre-serena-edit ──────────────────────────────────────────────────────────
 
-HOOK_SE="${PLUGIN_ROOT}/hooks/pre-serena-edit"
+HOOK_SE="${PLUGIN_ROOT}/hooks/pre-serena-edit-guard.sh"
 HOOK_PR_REFS="${PLUGIN_ROOT}/hooks/post-serena-refs"
 
 # Use a temp dir as CLAUDE_PLUGIN_ROOT for isolation
@@ -167,15 +167,15 @@ if [ -f "$HOOK_SE" ]; then
 echo ""
 echo "--- pre-serena-edit: warn when no refs traced ---"
 
-# Without refs state file, should warn (exit 1)
+# Without refs state file, should deny (exit 2)
 rc=0
 echo '{"tool_name":"mcp__serena__replace_symbol_body","tool_input":{"name_path":"Foo","relative_path":"bar.py","body":"pass"},"session_id":"smoke-test"}' \
-    | CLAUDE_PLUGIN_ROOT="$SMOKE_TMPROOT" bash "$HOOK_SE" >/dev/null 2>&1 || rc=$?
-if [ "$rc" -eq 1 ]; then
-    echo "  [PASS] warns without refs (exit 1)"
+    | CLAUDE_PLUGIN_DATA="${SMOKE_TMPROOT}" bash "$HOOK_SE" >/dev/null 2>&1 || rc=$?
+if [ "$rc" -eq 2 ]; then
+    echo "  [PASS] denies without refs (exit 2)"
     passed=$((passed+1))
 else
-    echo "  [FAIL] expected exit 1 without refs, got $rc"
+    echo "  [FAIL] expected exit 2 without refs, got $rc"
     failed=$((failed+1))
 fi
 
@@ -183,7 +183,7 @@ echo ""
 echo "--- pre-serena-edit: allow non-edit tool ---"
 rc=0
 echo '{"tool_name":"mcp__serena__find_symbol","tool_input":{"name_path_pattern":"Foo"}}' \
-    | CLAUDE_PLUGIN_ROOT="$SMOKE_TMPROOT" bash "$HOOK_SE" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="${SMOKE_TMPROOT}" bash "$HOOK_SE" >/dev/null 2>&1 || rc=$?
 if [ "$rc" -eq 0 ]; then
     echo "  [PASS] non-edit tool allowed (exit 0)"
     passed=$((passed+1))
@@ -208,7 +208,7 @@ rm -rf "$SMOKE_TMPROOT/state"
 
 rc=0
 echo '{"tool_name":"mcp__serena__find_referencing_symbols","tool_input":{"name_path":"Foo","relative_path":"bar.py"},"session_id":"smoke-refs"}' \
-    | CLAUDE_PLUGIN_ROOT="$SMOKE_TMPROOT" bash "$HOOK_PR_REFS" >/dev/null 2>&1 || rc=$?
+    | CLAUDE_PLUGIN_DATA="${SMOKE_TMPROOT}" bash "$HOOK_PR_REFS" >/dev/null 2>&1 || rc=$?
 if [ "$rc" -eq 0 ]; then
     echo "  [PASS] post-serena-refs exits 0"
     passed=$((passed+1))
