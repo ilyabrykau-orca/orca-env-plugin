@@ -16,6 +16,17 @@
       { "matcher": "mcp__serena__find_referencing_symbols", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-serena-refs'", "timeout": 5 }] },
       { "matcher": "mcp__codebase-memory-mcp__(search_code|search_graph|get_code_snippet|trace_path|query_graph|get_architecture|get_graph_schema|detect_changes)", "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-cbm-read-record.sh'", "timeout": 5 }] }
     ],
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-batch-audit.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "Stop": [
       { "hooks": [{ "type": "command", "command": "node '${CLAUDE_PLUGIN_ROOT}/hooks/stop.js'", "timeout": 30 }] }
     ],
