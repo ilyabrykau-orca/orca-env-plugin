@@ -171,17 +171,25 @@ for skill_file in "${PLUGIN_ROOT}"/skills/*/SKILL.md; do
     fi
 done
 
-# --- 7. orca-setup references CBM not codanna ---
+# --- 7. orca-setup is slim (no inline tool calls) ---
 echo ""
-echo "--- orca-setup uses CBM tools ---"
+echo "--- orca-setup content validation ---"
 
 SETUP_SKILL="${PLUGIN_ROOT}/skills/orca-setup/SKILL.md"
 if [ -f "$SETUP_SKILL" ]; then
-    if grep -q 'mcp__codebase-memory-mcp__' "$SETUP_SKILL"; then
-        echo "  [PASS] orca-setup references CBM namespace"
+    if grep -q 'Params cheat sheet' "$SETUP_SKILL"; then
+        echo "  [PASS] orca-setup has Params cheat sheet"
         passed=$((passed+1))
     else
-        echo "  [FAIL] orca-setup missing CBM namespace references"
+        echo "  [FAIL] orca-setup missing Params cheat sheet"
+        failed=$((failed+1))
+    fi
+
+    if ! grep -q 'mcp__serena__list_memories' "$SETUP_SKILL"; then
+        echo "  [PASS] orca-setup does not have memory tool calls"
+        passed=$((passed+1))
+    else
+        echo "  [FAIL] orca-setup has stale memory tool calls"
         failed=$((failed+1))
     fi
 fi

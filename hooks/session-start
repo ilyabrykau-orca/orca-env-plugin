@@ -31,8 +31,7 @@ project_ctx=""
 if [ -n "$project" ]; then
     project_ctx="SERENA WORKSPACE DETECTED: project='${project}' at ${PWD}
 
-IMMEDIATELY call: mcp__serena__activate_project(project=${project})
-Then: mcp__serena__list_memories() and read relevant memories."
+IMMEDIATELY call: mcp__serena__activate_project(project=${project})"
 fi
 
 # Build session context as plain string (jq handles escaping)

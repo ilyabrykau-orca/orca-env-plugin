@@ -36,7 +36,13 @@ fi
 if assert_contains "$output" "mcp__serena__activate_project" "contains Serena activation call"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
-if assert_contains "$output" "mcp__codebase-memory-mcp__" "contains CBM tool references"; then
+if assert_not_contains "$output" "list_memories" "does not contain list_memories call"; then
+    passed=$((passed+1)); else failed=$((failed+1))
+fi
+if assert_not_contains "$output" "read_memory" "does not contain read_memory call"; then
+    passed=$((passed+1)); else failed=$((failed+1))
+fi
+if assert_contains "$output" "Params cheat sheet" "contains params cheat sheet"; then
     passed=$((passed+1)); else failed=$((failed+1))
 fi
 if assert_not_contains "$output" "mcp__codanna__" "does not contain codanna references"; then
