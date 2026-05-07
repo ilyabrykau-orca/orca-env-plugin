@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# PostToolUse: record successful CBM read calls for the session.
-# Used by pre-serena-read-guard.sh to determine if CBM has been tried.
-set -euo pipefail
+# PostToolUse: mark that CBM was used this session (flag file).
+# pre-serena-read-guard reads this flag to suppress the "try CBM first" hint.
+trap 'exit 0' EXIT
+
+JQ=$(command -v jq 2>/dev/null || command -v jaq 2>/dev/null) || exit 0
 
 INPUT=$(cat)
-TOOL_NAME=$(jq -r '.tool_name // empty' <<<"$INPUT")
+TOOL_NAME=$("$JQ" -r '.tool_name // empty' <<<"$INPUT" 2>/dev/null) || exit 0
 
-# Only record CBM read tools
 case "$TOOL_NAME" in
   mcp__codebase-memory-mcp__search_code|\
   mcp__codebase-memory-mcp__search_graph|\
@@ -22,22 +23,7 @@ case "$TOOL_NAME" in
     ;;
 esac
 
-# Record to per-session log
-PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}"
-SESSION_ID="${CLAUDE_SESSION_ID:-default}"
-LOG_DIR="${PLUGIN_DATA}/cbm-call-log"
-CBM_LOG="${LOG_DIR}/${SESSION_ID}.json"
-
-mkdir -p "$LOG_DIR"
-
-# Append this call to the log
-ENTRY=$(jq -n --arg tool "$TOOL_NAME" --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-    '{tool: $tool, timestamp: $ts}')
-
-if [ -f "$CBM_LOG" ]; then
-    jq --argjson entry "$ENTRY" '. += [$entry]' "$CBM_LOG" > "${CBM_LOG}.tmp" && mv "${CBM_LOG}.tmp" "$CBM_LOG"
-else
-    echo "[$ENTRY]" > "$CBM_LOG"
-fi
-
+SESSION_DIR="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}/${CLAUDE_SESSION_ID:-default}"
+mkdir -p "$SESSION_DIR"
+touch "${SESSION_DIR}/cbm-used"
 exit 0

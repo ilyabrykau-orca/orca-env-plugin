@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# PreToolUse guard: warn when Serena read tools are used without prior CBM reads this session.
-# Exit 0 = allow, exit 2 = warn (non-blocking), exit 1 would be error (not used here).
-set -euo pipefail
+# PreToolUse guard: hint (non-blocking) when Serena read tools used without prior CBM.
+# Outputs additionalContext JSON to stdout. Throttled to once per 300s per session.
+trap 'exit 0' EXIT
+
+JQ=$(command -v jq 2>/dev/null || command -v jaq 2>/dev/null) || exit 0
 
 INPUT=$(cat)
-TOOL_NAME=$(jq -r '.tool_name // empty' <<<"$INPUT")
+TOOL_NAME=$("$JQ" -r '.tool_name // empty' <<<"$INPUT" 2>/dev/null) || exit 0
 
-# Only guard Serena read tools
 case "$TOOL_NAME" in
   mcp__serena__find_symbol|\
   mcp__serena__get_symbols_overview|\
@@ -20,39 +21,30 @@ case "$TOOL_NAME" in
     ;;
 esac
 
-# Check per-session CBM call log
-PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}"
-SESSION_ID="${CLAUDE_SESSION_ID:-default}"
-CBM_LOG="${PLUGIN_DATA}/cbm-call-log/${SESSION_ID}.json"
+SESSION_DIR="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}/${CLAUDE_SESSION_ID:-default}"
 
-cbm_successful=false
-if [ -f "$CBM_LOG" ]; then
-    # Check if there's at least one successful CBM read call recorded
-    count=$(jq -r 'length // 0' "$CBM_LOG" 2>/dev/null || echo "0")
-    if [ "$count" -gt 0 ]; then
-        cbm_successful=true
+# CBM used this session — hint not needed
+[[ -f "${SESSION_DIR}/cbm-used" ]] && exit 0
+
+# Throttle: suppress if warned within last 300s
+WARN_TS_FILE="${SESSION_DIR}/serena-read-warned-ts"
+if [[ -f "$WARN_TS_FILE" ]]; then
+    last_ts=$(cat "$WARN_TS_FILE" 2>/dev/null || echo 0)
+    now=$(date +%s)
+    if (( now - last_ts < 300 )); then
+        exit 0
     fi
 fi
 
-if [ "$cbm_successful" = "true" ]; then
-    exit 0
-fi
+mkdir -p "$SESSION_DIR"
+date +%s > "$WARN_TS_FILE"
 
-# No prior CBM calls — emit warning
-cat >&2 << 'WARN'
-⚠️ Serena read tools are a FALLBACK, not a starting point.
+MSG="Serena read tools are a FALLBACK. Try CBM first:
+  mcp__codebase-memory-mcp__search_code(pattern=..., project=\"...\")
+  mcp__codebase-memory-mcp__get_architecture(project=\"...\")
+If CBM returns empty: (1) verify project name with list_projects() (2) broaden pattern (3) try search_graph.
+This hint is non-blocking — proceed if CBM truly cannot help."
 
-Try CBM first:
-  mcp__codebase-memory-mcp__search_code(pattern=..., project="Users-ilyabrykau-src-...")
-  mcp__codebase-memory-mcp__get_architecture(project="Users-ilyabrykau-src-...")
-  mcp__codebase-memory-mcp__search_graph(query="MATCH (n) WHERE n.file CONTAINS '...' RETURN n", project="...")
-
-If CBM returned empty:
-  1. Verify project name with list_projects()
-  2. Broaden pattern — drop path_filter, use concrete symbol names
-  3. Try get_architecture or search_graph instead of search_code
-
-This warning does not block; you can proceed if CBM truly cannot help.
-WARN
-
-exit 2
+"$JQ" -n --arg msg "$MSG" \
+    '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":$msg}}'
+exit 0
