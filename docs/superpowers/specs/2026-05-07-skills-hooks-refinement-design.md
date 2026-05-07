@@ -1,7 +1,7 @@
 # Skills + Hooks Refinement — Design
 
 **Date:** 2026-05-07  
-**Scope:** 4 skill rewrites + 6 hook fixes  
+**Scope:** 4 skill rewrites + 7 hook fixes  
 **Constraints:** No Python rewrite. Lean. Modelled on pilot-shell patterns.
 
 ---
@@ -118,17 +118,34 @@ Session dir: `${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}
 - Add timestamp throttle: write `${SESSION_DIR}/serena-read-warned-ts` on first warn; skip if file exists and is < 300s old
 - Check `${SESSION_DIR}/cbm-used` flag file instead of JSON log
 
-### 4. `pre-serena-edit-guard.sh` — fix state file path bug
+### 4. `post-serena-refs` + `pre-serena-edit-guard.sh` — fix state dir + path bug (AP-55)
 
-**Problem:** Reads `refs-traced.${SESSION_ID}.json` but `post-serena-refs` writes `refs-traced.json` (no session ID). They never match → guard always fires.  
-**Fix:** Align path to `${STATE_DIR}/refs-traced.json` (remove `${SESSION_ID}` from filename).
+**Problem A (AP-55):** `post-serena-refs` writes state to `${CLAUDE_PLUGIN_ROOT}/state/` — this directory is wiped on every plugin update. All traced-refs state is lost on upgrade.  
+**Problem B:** `post-serena-refs` writes `refs-traced.json` but `pre-serena-edit-guard.sh` reads `refs-traced.${SESSION_ID}.json` — paths never match → guard always fires.  
+**Problem C:** `pre-serena-edit-guard.sh` wraps its deny in `hookSpecificOutput` — deny must be top-level `{"permissionDecision":"deny","permissionDecisionReason":"..."}` per hook-patterns.md (AP-16).
+
+**Fix:**
+- Both hooks: use `STATE_DIR="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugin-data/orca-env-plugin}/state"`
+- `post-serena-refs`: write `refs-traced.json` (no session ID — already correct filename)
+- `pre-serena-edit-guard.sh`: read `refs-traced.json` (drop `${SESSION_ID}` suffix)
+- `pre-serena-edit-guard.sh`: return `{"permissionDecision":"deny","permissionDecisionReason":"..."}` + exit 2 at top level (no `hookSpecificOutput` wrapper)
 
 ### 5. `skill-activation-prompt` — wrap output in additionalContext JSON
 
 **Problem:** Outputs plain text to stdout. Claude Code expects `additionalContext` JSON for UserPromptSubmit hooks.  
 **Fix:** Wrap final output in `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"<msg>"}}`.
 
-### 6. `session-start-compact` — remove any memory refs, align with new skill content
+### 6. `hooks.json` — wire PostToolBatch audit (AP-51)
+
+**Problem:** `post-batch-audit.sh` exists and catches routing escapes, but `PostToolBatch` is not in `hooks.json` anywhere. The audit is silently not running (AP-51: no PostToolBatch audit = escapes invisible).  
+**Fix:** Add `PostToolBatch` entry to `hooks.json`:
+```json
+"PostToolBatch": [
+  { "hooks": [{ "type": "command", "command": "bash '${CLAUDE_PLUGIN_ROOT}/hooks/post-batch-audit.sh'", "timeout": 10 }] }
+]
+```
+
+### 7. `session-start-compact` — remove any memory refs, align with new skill content
 
 **Problem:** Minor — check for stale memory-related content.  
 **Fix:** Audit and remove any `list_memories` / `read_memory` references. Content already uses compact `<tool_routing>` format — keep that pattern.
