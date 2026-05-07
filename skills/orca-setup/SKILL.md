@@ -1,6 +1,6 @@
 ---
 name: orca-setup
-description: Orca workspace setup — tool routing enforcement, CBM/Serena patterns, memory protocol.
+description: Orca workspace setup — tool routing enforcement, CBM/Serena patterns, params cheat sheet.
 ---
 
 # Orca Workspace Setup
