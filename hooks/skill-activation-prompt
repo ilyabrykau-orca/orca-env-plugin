@@ -38,4 +38,4 @@ for level in critical high medium low; do
 done
 output+="ACTION: Use Skill tool BEFORE responding"
 
-printf "%b\n" "$output"
+"$JQ" -n --arg ctx "$(printf "%b" "$output")" '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$ctx}}'

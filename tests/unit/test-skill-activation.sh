@@ -139,6 +139,28 @@ else
     failed=$((failed+1))
 fi
 
+# ── JSON output shape ────────────────────────────────────────────────────────
+
+echo ""
+echo "--- JSON output shape ---"
+
+json_out=$(run_prompt "search code for authentication")
+
+if assert_valid_json "$json_out" "output is valid JSON"; then
+    passed=$((passed+1))
+else
+    failed=$((failed+1))
+fi
+
+if echo "$json_out" | jq -e '.hookSpecificOutput.additionalContext | length > 0' >/dev/null 2>&1; then
+    echo "  [PASS] hookSpecificOutput.additionalContext present and non-empty"
+    passed=$((passed+1))
+else
+    echo "  [FAIL] hookSpecificOutput.additionalContext missing or empty"
+    echo "  Output: ${json_out:0:300}"
+    failed=$((failed+1))
+fi
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 
 echo ""
