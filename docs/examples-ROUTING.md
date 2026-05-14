@@ -28,9 +28,23 @@ For source files (`.py .go .ts .tsx .js .jsx .rs .cpp .c .h .rb .java`):
 | `find_symbol` (Serena) | `name_path_pattern` | `name`, `symbol_name` |
 | `read_file` (Serena) | 0-based lines, `end_line` inclusive | 1-based |
 
-## CBM error handling
+## Recovery — don't fall back to native
 
-If CBM returns malformed/error/`project not found`: (1) verify project name with `list_projects()`, (2) retry once with different params, (3) pivot to Serena. **Do not fall back to native tools.**
+If a CBM call returns empty/error/`project not found`:
+1. `mcp__codebase-memory-mcp__list_projects()` — verify exact project name.
+2. Retry CBM with corrected `project` or broader `pattern`.
+3. If still empty: pivot to Serena (steps below).
+
+If a Serena call fails with `project not active` / `path not in project` / `symbol not found at root`:
+1. `mcp__serena__activate_project(project=<short-name>)` — the project name from ROUTING.md's table below, **not** an absolute path.
+2. Re-issue the Serena call.
+3. If Serena `find_symbol` still misses: use `mcp__codebase-memory-mcp__get_code_snippet(qualified_name=..., project=...)` — that is the canonical read tool, not native Read.
+
+**Never** fall back to native `Read`/`Grep` on code files just because CBM or Serena errored. The recovery sequence above is short and converges.
+
+## Read a specific file region without Serena/CBM symbol resolution
+
+Use `mcp__serena__read_file(relative_path=..., start_line=0, end_line=N)` (0-based, end inclusive). If even that fails, `activate_project` first. Native `Read` is the **last resort** and signals a real config bug worth reporting, not a routine action.
 
 ## Common orca projects
 
