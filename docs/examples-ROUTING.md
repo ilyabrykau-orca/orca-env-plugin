@@ -6,6 +6,31 @@ For source files (`.py .go .ts .tsx .js .jsx .rs .cpp .c .h .rb .java`):
 
 If the user's request already contains a code file path (e.g. `orca-sensor/foo/bar.go:53` or `**/handlers/session-start.ts`), your **first** tool call must be `mcp__codebase-memory-mcp__get_code_snippet` or `mcp__serena__read_file` on that path. Never preflight with `Glob`/`Grep`/`Read` "to make sure the file is there" — the user already said it is. A Glob/Grep on a `.py/.go/.ts/.tsx/.js/.jsx/.rs/.cpp/.c/.h/.rb/.java` path counts as a native-code bypass even if you only used it for path confirmation.
 
+**Concrete recipes** — copy these patterns verbatim instead of pre-Globbing:
+
+User says `orca-sensor/services/sensor-management/server/bu_cache_refresher.go:53`:
+```
+mcp__codebase-memory-mcp__get_code_snippet(
+    qualified_name="services/sensor-management/server/bu_cache_refresher.go",
+    project="Users-ilyabrykau-src-orca-sensor")
+```
+or, for a fixed line window:
+```
+mcp__serena__activate_project(project="orca-sensor")  # only if not already active
+mcp__serena__read_file(
+    relative_path="services/sensor-management/server/bu_cache_refresher.go",
+    start_line=45, end_line=75)   # 0-based, inclusive
+```
+
+User says `orca-env-plugin/src/handlers/session-start.ts`:
+```
+mcp__codebase-memory-mcp__get_code_snippet(
+    qualified_name="src/handlers/session-start.ts",
+    project="orca-env-plugin")
+```
+
+If `get_code_snippet` returns empty/error, retry once with broader `qualified_name` (drop suffix), or pivot to `mcp__serena__read_file` per the recipe above. Still no Glob.
+
 ## Reads / discovery
 
 - PREFER: `mcp__codebase-memory-mcp__{search_code, search_graph, get_code_snippet, trace_path, get_architecture, query_graph}` with `project=<repo-name>` (required).
