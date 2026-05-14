@@ -7,6 +7,7 @@ For source files (`.py .go .ts .tsx .js .jsx .rs .cpp .c .h .rb .java`):
 - PREFER: `mcp__codebase-memory-mcp__{search_code, search_graph, get_code_snippet, trace_path, get_architecture, query_graph}` with `project=<repo-name>` (required).
 - FALLBACK if CBM empty/error: `mcp__serena__{find_symbol, get_symbols_overview, search_for_pattern, read_file}`.
 - AVOID native `Read`/`Grep`/`Glob` on code files. Non-code (`.json .yaml .md .toml .sh Makefile Dockerfile`) → native tools fine.
+- When the user already gives you a file path (e.g. `orca-sensor/foo/bar.go:53`), do NOT use `Glob`/`Grep` to confirm it exists. Treat the path as authoritative and go straight to `mcp__codebase-memory-mcp__get_code_snippet(qualified_name=..., project=...)` or `mcp__serena__read_file(relative_path=..., start_line=0, end_line=N)`. File-existence checks via native `Glob`/`Grep` on code suffixes count as a native bypass — they are the single most common slip on file-targeted bug-verify tasks.
 
 ## Edits
 
