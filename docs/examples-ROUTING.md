@@ -2,12 +2,15 @@
 
 For source files (`.py .go .ts .tsx .js .jsx .rs .cpp .c .h .rb .java`):
 
+## Hard rule — file-path lookups
+
+If the user's request already contains a code file path (e.g. `orca-sensor/foo/bar.go:53` or `**/handlers/session-start.ts`), your **first** tool call must be `mcp__codebase-memory-mcp__get_code_snippet` or `mcp__serena__read_file` on that path. Never preflight with `Glob`/`Grep`/`Read` "to make sure the file is there" — the user already said it is. A Glob/Grep on a `.py/.go/.ts/.tsx/.js/.jsx/.rs/.cpp/.c/.h/.rb/.java` path counts as a native-code bypass even if you only used it for path confirmation.
+
 ## Reads / discovery
 
 - PREFER: `mcp__codebase-memory-mcp__{search_code, search_graph, get_code_snippet, trace_path, get_architecture, query_graph}` with `project=<repo-name>` (required).
 - FALLBACK if CBM empty/error: `mcp__serena__{find_symbol, get_symbols_overview, search_for_pattern, read_file}`.
-- AVOID native `Read`/`Grep`/`Glob` on code files. Non-code (`.json .yaml .md .toml .sh Makefile Dockerfile`) → native tools fine.
-- When the user already gives you a file path (e.g. `orca-sensor/foo/bar.go:53`), do NOT use `Glob`/`Grep` to confirm it exists. Treat the path as authoritative and go straight to `mcp__codebase-memory-mcp__get_code_snippet(qualified_name=..., project=...)` or `mcp__serena__read_file(relative_path=..., start_line=0, end_line=N)`. File-existence checks via native `Glob`/`Grep` on code suffixes count as a native bypass — they are the single most common slip on file-targeted bug-verify tasks.
+- AVOID native `Read`/`Grep`/`Glob` on code files. Non-code (`.json .yaml .md .toml .sh Makefile Dockerfile`) → native tools fine. (See **Hard rule — file-path lookups** above.)
 
 ## Edits
 
