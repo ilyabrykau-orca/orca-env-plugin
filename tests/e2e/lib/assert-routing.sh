@@ -300,3 +300,24 @@ assert_cbm_retries_on_empty() {
 }
 
 export -f assert_cbm_retries_on_empty
+
+# Friction budget: fail if the model used more than $budget *routing-relevant* tool calls.
+# Excludes ToolSearch and Skill — those are deferred-tool schema loading + skill activation,
+# which is infrastructure, not a routing decision. Counts the actual CBM/Serena/native
+# tool calls the model made to answer the question.
+assert_max_tool_calls() {
+    local transcript="$1"
+    local budget="$2"
+    local test_name="$3"
+    local count
+    count=$(extract_tool_calls "$transcript" | grep -v -E '^(ToolSearch|Skill)$' | grep -c -v '^$' || true)
+    if [ "$count" -le "$budget" ]; then
+        echo "  [PASS] $test_name (routing-relevant calls=$count, budget $budget; ToolSearch/Skill excluded)"
+        return 0
+    else
+        echo "  [FAIL] $test_name — $count routing-relevant calls, budget was $budget"
+        return 1
+    fi
+}
+
+export -f assert_max_tool_calls

@@ -26,18 +26,19 @@ mkdir -p "$RESULTS_DIR"
 SUITE_LOG="${RESULTS_DIR}/routing-suite.tsv"
 : > "$SUITE_LOG"
 
-# Per-task: name | prompt | max_turns | max_time
+# Per-task: name | prompt | max_turns | max_time | call_budget
 # Prompts are deliberately short and bounded so simple lookups can complete in ≤3 turns;
 # turn budgets are tighter than other matrix files to force CBM-first behavior rather
-# than 8-turn native-Read spelunking.
+# than 8-turn native-Read spelunking. The call_budget feeds assert_max_tool_calls and
+# drives ROUTING.md toward one-shot lookups (vs search→snippet→verify chains).
 run_task() {
-    local name="$1" prompt="$2" max_turns="$3" max_time="$4"
+    local name="$1" prompt="$2" max_turns="$3" max_time="$4" call_budget="$5"
 
     echo ""
     echo "=== routing-suite/${name} ==="
     local best=0 best_detail=""
     for attempt in $(seq 1 "$MAX_RETRIES"); do
-        echo "  attempt ${attempt}/${MAX_RETRIES} (max_turns=${max_turns}, max_time=${max_time}s)"
+        echo "  attempt ${attempt}/${MAX_RETRIES} (max_turns=${max_turns}, max_time=${max_time}s, budget=${call_budget})"
         local transcript
         transcript=$(launch_session "$prompt" "$CWD" "$max_turns" "$max_time")
 
@@ -58,21 +59,26 @@ run_task() {
             detail+="serena_edit=FAIL,"
         fi
         if assert_tool_used "$transcript" "codebase-memory-mcp" "CBM was used at all"; then
-            p=$((p+1)); detail+="cbm_used=ok"
+            p=$((p+1)); detail+="cbm_used=ok,"
         else
-            detail+="cbm_used=FAIL"
+            detail+="cbm_used=FAIL,"
+        fi
+        if assert_max_tool_calls "$transcript" "$call_budget" "tool-call budget"; then
+            p=$((p+1)); detail+="budget=ok"
+        else
+            detail+="budget=FAIL"
         fi
 
         if [ "$p" -gt "$best" ]; then
             best=$p
             best_detail="$detail"
         fi
-        [ "$p" -eq 4 ] && break
+        [ "$p" -eq 5 ] && break
     done
 
     printf '%s\t%d\t%s\n' "$name" "$best" "$best_detail" >> "$SUITE_LOG"
-    echo "  -> ${name}: ${best}/4  (${best_detail})"
-    [ "$best" -eq 4 ] && return 0 || return 1
+    echo "  -> ${name}: ${best}/5  (${best_detail})"
+    [ "$best" -eq 5 ] && return 0 || return 1
 }
 
 # --- Task 1: rt_fast_asset Python — derived from 66d800bd ---
@@ -110,11 +116,13 @@ the refresher reportedly hard-codes config.DefaultBusinessUnitCacheTTL instead o
 honoring cfg.BusinessUnitCacheTTL. Read-only.'
 
 failures=0
-run_task "01-rt-fast-asset"      "$P1" 4 150 || failures=$((failures+1))
-run_task "02-env-plugin-handlers" "$P2" 4 150 || failures=$((failures+1))
-run_task "03-bpfstream-zeroalloc" "$P3" 5 180 || failures=$((failures+1))
-run_task "04-http-protocol-tests" "$P4" 5 180 || failures=$((failures+1))
-run_task "05-bu-cache-refresher"  "$P5" 5 180 || failures=$((failures+1))
+# Per-task call budgets: simple single-file lookups get 3 (CBM + answer, with one slack call);
+# 03-bpfstream is a legitimately broader hot-path review across multiple files so gets 8.
+run_task "01-rt-fast-asset"       "$P1" 4 150 3 || failures=$((failures+1))
+run_task "02-env-plugin-handlers" "$P2" 4 150 3 || failures=$((failures+1))
+run_task "03-bpfstream-zeroalloc" "$P3" 5 180 8 || failures=$((failures+1))
+run_task "04-http-protocol-tests" "$P4" 5 180 3 || failures=$((failures+1))
+run_task "05-bu-cache-refresher"  "$P5" 5 180 3 || failures=$((failures+1))
 
 echo ""
 echo "=== routing-suite: ${failures} task(s) failed (of 5) ==="
