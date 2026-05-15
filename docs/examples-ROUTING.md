@@ -31,6 +31,11 @@ mcp__codebase-memory-mcp__get_code_snippet(
 
 If `get_code_snippet` returns empty/error, retry once with broader `qualified_name` (drop suffix), or pivot to `mcp__serena__read_file` per the recipe above. Still no Glob.
 
+**One-shot expectation**: for a single-file lookup, the first call should be the answer call.
+- `qualified_name` accepts a repo-relative file path (`services/foo/bar.go`, `src/handlers/baz.ts`). You do NOT need a preceding `search_code` "to find the file" — pass the path directly.
+- Do NOT verify after `get_code_snippet`/`read_file` returns content. Trust the first result and answer.
+- If unsure which CBM project a file belongs to, pick from the common-orca-projects table below, or fall back to `project="orca-unified"` (broad index that covers all). Do not call `search_code` just to discover the project name.
+
 ## Reads / discovery
 
 - PREFER: `mcp__codebase-memory-mcp__{search_code, search_graph, get_code_snippet, trace_path, get_architecture, query_graph}` with `project=<repo-name>` (required).
