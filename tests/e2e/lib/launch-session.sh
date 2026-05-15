@@ -20,12 +20,16 @@ launch_session() {
         timeout_cmd="timeout $max_time"
     fi
 
+    # NOTE: as of 2026-05-15 we drop --plugin-dir so the test exercises the
+    # same load path real users hit (orca-env-plugin loaded via settings.json
+    # `enabledPlugins`). If you re-add --plugin-dir, every routing assertion
+    # also passes when the plugin is disabled in settings — that hides regressions
+    # in the settings-load path. See docs/notes/routing-e2e-report-2026-05-14.md.
     (
         cd "$work_dir"
         unset CLAUDECODE
         unset CLAUDE_CODE_ENTRYPOINT
         $timeout_cmd claude -p "$prompt" \
-            --plugin-dir "$PLUGIN_ROOT" \
             --dangerously-skip-permissions \
             --max-turns "$max_turns" \
             --output-format json \
