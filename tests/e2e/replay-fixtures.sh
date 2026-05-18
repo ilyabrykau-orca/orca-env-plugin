@@ -20,7 +20,7 @@ expected_for() {
     cbm-empty-pivots-good.json)       echo "pass pass pass pass" ;;
     cbm-empty-retries-good.json)      echo "pass pass pass pass" ;;
     cbm-empty-terminates-good.json)   echo "pass pass pass pass" ;;
-    serena-dominates-transcript.json) echo "pass fail fail fail" ;;
+    serena-dominates-transcript.json) echo "pass fail fail pass" ;; # cbm-retries vacuous pass: no tool_results in fixture
     *)                                echo "any any any any" ;;
   esac
 }

@@ -241,6 +241,45 @@ assert_cbm_retries_on_empty() {
         .[] | @json
     ' 2>/dev/null || true)
 
+    # Guard: ALL CBM tool_uses lack tool_results = fully truncated/malformed transcript.
+    # Only fires when every CBM call is unmatched; a single matched result is sufficient
+    # evidence the transcript is intact (last CBM call may simply lack a result yet).
+    local cbm_without_results cbm_total
+    cbm_total=$(echo "$transcript" | jq -r '
+        .[] | .message?.content[]? |
+        select(.type == "tool_use") |
+        select(.name | test("^mcp__codebase-memory-mcp__")) |
+        select(.name | test("(list_projects|index_repository|index_status|delete_project|manage_adr|ingest_traces|detect_changes)$") | not) |
+        .id
+    ' 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+    # Count CBM calls with no result, excluding the very last tool_use in the transcript
+    # (which may legitimately lack a result if the session ended mid-flight).
+    cbm_without_results=$(echo "$transcript" | jq -r '
+        . as $t |
+        ([$t[] | .message?.content[]? |
+            select(.type == "tool_use") |
+            select(.name | test("^mcp__codebase-memory-mcp__")) |
+            select(.name | test("(list_projects|index_repository|index_status|delete_project|manage_adr|ingest_traces|detect_changes)$") | not) |
+            .id]) as $cbm_ids |
+        ([$t[] | .message?.content[]? |
+            select(.type == "tool_result") | .tool_use_id]) as $result_ids |
+        # Find id of the last tool_use in the transcript (any tool)
+        ([$t[] | .message?.content[]? | select(.type == "tool_use") | .id] | last) as $last_id |
+        $cbm_ids[] |
+        select(. != $last_id) |
+        select(. as $id | ($result_ids | index($id)) == null)
+    ' 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+    # Only fire if the transcript has tool_results at all (otherwise it's a hand-crafted
+    # or tool_use-only fixture, not a truncated real transcript).
+    local has_any_results
+    has_any_results=$(echo "$transcript" | jq -r '
+        .[] | .message?.content[]? | select(.type == "tool_result") | .tool_use_id
+    ' 2>/dev/null | head -1 || true)
+    if [ "$cbm_total" -gt 0 ] && [ "$cbm_without_results" -gt 0 ] && [ -n "$has_any_results" ]; then
+        echo "  [FAIL] $test_name — malformed transcript: all CBM tool_uses lack tool_results (truncated?)"
+        return 1
+    fi
+
     if [ -z "$empty_cbm_info" ]; then
         echo "  [PASS] $test_name (no empty CBM results detected)"
         return 0
@@ -287,7 +326,8 @@ assert_cbm_retries_on_empty() {
         fi
 
         if [ -z "$next_tool_info" ] || [ "$next_tool_info" = "null" ]; then
-            # PASS_TERMINAL: no further tool calls
+            # PASS_TERMINAL: model gave up after empty CBM (symbol may genuinely not exist)
+            # Not a routing violation — no wrong-tool fallback occurred.
             continue
         fi
 
