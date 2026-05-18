@@ -46,6 +46,8 @@ case "$tool_name" in
               # fail-closed: destructive writes must go through Serena
               echo "BLOCKED: Native $tool_name on '$file_path'. Use mcp__serena__replace_content(needle=, repl=, mode=) or replace_symbol_body." >&2
               exit 2 ;;
+          esac
+          ;;
       esac
     fi
     ;;
