@@ -39,11 +39,13 @@ case "$tool_name" in
         *.py|*.go|*.ts|*.tsx|*.js|*.jsx|*.rs|*.cpp|*.c|*.h|*.hpp|*.rb|*.java|*.kt|*.php|*.scala|*.swift|*.sh|*.bash)
           case "$tool_name" in
             Read)
-              echo "BLOCKED: Native Read on '$file_path'. Use mcp__codebase-memory-mcp__get_code_snippet or mcp__serena__find_symbol(include_body=True)." >&2 ;;
+              # fail-open: allow read but hint toward CBM (less friction, data still useful)
+              echo "TIP: prefer get_code_snippet(qualified_name=${file_path##*/}, project=...) for AST context; see ROUTING.md." >&2
+              exit 1 ;;
             Edit|Write)
-              echo "BLOCKED: Native $tool_name on '$file_path'. Use mcp__serena__replace_symbol_body or mcp__serena__replace_content." >&2 ;;
-          esac
-          exit 2 ;;
+              # fail-closed: destructive writes must go through Serena
+              echo "BLOCKED: Native $tool_name on '$file_path'. Use mcp__serena__replace_content(needle=, repl=, mode=) or replace_symbol_body." >&2
+              exit 2 ;;
       esac
     fi
     ;;
