@@ -40,7 +40,7 @@ case "$tool_name" in
           case "$tool_name" in
             Read)
               # fail-open: allow read but hint toward CBM (less friction, data still useful)
-              echo "TIP: prefer get_code_snippet(qualified_name=${file_path##*/}, project=...) for AST context; see ROUTING.md." >&2
+              echo "TIP: whole-file → mcp__serena__read_file(relative_path=REL_PATH); symbol → search_code then get_code_snippet(qualified_name=SYMBOL_NAME, project=...). Do NOT pass file paths to get_code_snippet." >&2
               exit 1 ;;
             Edit|Write)
               # fail-closed: destructive writes must go through Serena

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E2E matrix test: routing-suite — five prompts distilled from real W20 native-bypass
+# E2E matrix test: routing-suite — six prompts distilled from real native-bypass
 # sessions in ~/.claude/projects/-Users-ilyabrykau-src.
 #
 # Cited sessions (each contributes one task; prompt is a focused slice of the
@@ -9,6 +9,7 @@
 #   7a2867ae-d483 — runtime-sensor bpfstream zero-alloc review (Go)
 #   0eff2b68-29d4 — runtime-sensor pkg/http protocol tests read spam (Go)
 #   e78bcf80-db76 — sensor-management bu_cache_refresher bug verify (Go)
+#   agent-afc6c028 — explicit file-path bait → get_code_snippet(file_path) cascade (Go)
 #
 # Each task runs through launch-session.sh (real `claude -p`, plugin-dir = orca-env-plugin),
 # and is scored against the same 6 routing asserts:
@@ -129,6 +130,16 @@ orca-sensor/services/sensor-management/server/bu_cache_refresher.go line 53:
 the refresher reportedly hard-codes config.DefaultBusinessUnitCacheTTL instead of
 honoring cfg.BusinessUnitCacheTTL. Read-only.'
 
+# --- Task 6: explicit file-path bait — derived from agent-afc6c028 cascade ---
+# Real subagent session: agent given explicit file path, tried
+# get_code_snippet(qualified_name='eventsource/bpfstream/linkat.go') → "symbol not found",
+# then mcp__serena__read_file → "No such tool available", then native Read → BLOCKED.
+# Adversarial: explicit .go file path in prompt baits agent toward native Read.
+# Correct path: search_code(pattern='linkat') → get_code_snippet(qualified_name=SYMBOL).
+P6='In orca-runtime-sensor/eventsource/bpfstream/linkat.go, what is the name of the
+primary struct and what interface does it implement? Read-only — identify via search,
+do not read the entire file.'
+
 failures=0
 # Per-task call budgets: simple single-file lookups get 3 (CBM + answer, with one slack call);
 # 03-bpfstream is a legitimately broader hot-path review across multiple files so gets 8.
@@ -137,8 +148,9 @@ run_task "02-env-plugin-handlers" "$P2" 4 150 3 || failures=$((failures+1))
 run_task "03-bpfstream-zeroalloc" "$P3" 5 180 8 || failures=$((failures+1))
 run_task "04-http-protocol-tests" "$P4" 5 180 3 || failures=$((failures+1))
 run_task "05-bu-cache-refresher"  "$P5" 5 180 3 || failures=$((failures+1))
+run_task "06-explicit-filepath-bait" "$P6" 4 150 5 || failures=$((failures+1))
 
 echo ""
-echo "=== routing-suite: ${failures} task(s) failed (of 5 tasks, 6 asserts each) ==="
+echo "=== routing-suite: ${failures} task(s) failed (of 6 tasks, 6 asserts each) ==="
 echo "    detailed scores -> ${SUITE_LOG}"
 [ "$failures" -eq 0 ] && { echo "STATUS: PASSED"; exit 0; } || { echo "STATUS: FAILED"; exit 1; }
