@@ -16,11 +16,12 @@ STATE_FILE="${STATE_DIR}/refs-traced.json"
 
 input=$(</dev/stdin) 2>/dev/null || exit 0
 
-# Single extraction
-parsed=$(printf '%s' "$input" | "$JQ" -r \
-  '[.tool_name // "", (((.tool_response? // {}).is_error // false) | if . then "err" else "ok" end), (.tool_input.relative_path // ""), (.session_id // "unknown")] | @tsv' \
-  2>/dev/null) || exit 0
-IFS=$'\t' read -r tool_name status relative_path session_id <<< "$parsed"
+# Extract fields individually to avoid IFS tab-collapsing empty relative_path
+# (a single @tsv+read call collapses consecutive tabs, sliding session_id into relative_path)
+tool_name=$(  printf '%s' "$input" | "$JQ" -r '.tool_name // ""'                                                                2>/dev/null) || exit 0
+status=$(     printf '%s' "$input" | "$JQ" -r '((.tool_response? // {}).is_error // false) | if . then "err" else "ok" end'    2>/dev/null) || exit 0
+relative_path=$(printf '%s' "$input" | "$JQ" -r '.tool_input.relative_path // ""'                                              2>/dev/null) || exit 0
+session_id="$(printf '%s' "$input" | "$JQ" -r '.session_id // "unknown"'                                                       2>/dev/null)" || exit 0
 
 [[ "$tool_name" == "mcp__serena__find_referencing_symbols" ]] || exit 0
 [[ "$status" == "ok" ]] || exit 0
