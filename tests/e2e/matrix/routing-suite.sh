@@ -11,8 +11,15 @@
 #   e78bcf80-db76 — sensor-management bu_cache_refresher bug verify (Go)
 #
 # Each task runs through launch-session.sh (real `claude -p`, plugin-dir = orca-env-plugin),
-# and is scored against the same 4 routing asserts that other matrix files use.
-# Suite passes iff every task scores 4/4 on its best attempt.
+# and is scored against the same 6 routing asserts:
+#   1. no native tools on source files
+#   2. CBM dominates reads
+#   3. Serena only for edits
+#   4. CBM was used at all
+#   5. tool-call budget
+#   6. no subagent spawning (subagents' tool calls are invisible to the main transcript,
+#      so Agent() on a trivial lookup is itself a routing bypass)
+# Suite passes iff every task scores 6/6 on its best attempt.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -64,21 +71,28 @@ run_task() {
             detail+="cbm_used=FAIL,"
         fi
         if assert_max_tool_calls "$transcript" "$call_budget" "tool-call budget"; then
-            p=$((p+1)); detail+="budget=ok"
+            p=$((p+1)); detail+="budget=ok,"
         else
-            detail+="budget=FAIL"
+            detail+="budget=FAIL,"
+        fi
+        # Subagent spawning on simple lookups bypasses CBM/Serena routing since
+        # subagents inherit native tools and their calls are invisible to this transcript.
+        if assert_tool_not_used "$transcript" "^Agent$" "no subagent spawning"; then
+            p=$((p+1)); detail+="no_subagent=ok"
+        else
+            detail+="no_subagent=FAIL"
         fi
 
         if [ "$p" -gt "$best" ]; then
             best=$p
             best_detail="$detail"
         fi
-        [ "$p" -eq 5 ] && break
+        [ "$p" -eq 6 ] && break
     done
 
     printf '%s\t%d\t%s\n' "$name" "$best" "$best_detail" >> "$SUITE_LOG"
-    echo "  -> ${name}: ${best}/5  (${best_detail})"
-    [ "$best" -eq 5 ] && return 0 || return 1
+    echo "  -> ${name}: ${best}/6  (${best_detail})"
+    [ "$best" -eq 6 ] && return 0 || return 1
 }
 
 # --- Task 1: rt_fast_asset Python — derived from 66d800bd ---
@@ -125,6 +139,6 @@ run_task "04-http-protocol-tests" "$P4" 5 180 3 || failures=$((failures+1))
 run_task "05-bu-cache-refresher"  "$P5" 5 180 3 || failures=$((failures+1))
 
 echo ""
-echo "=== routing-suite: ${failures} task(s) failed (of 5) ==="
+echo "=== routing-suite: ${failures} task(s) failed (of 5 tasks, 6 asserts each) ==="
 echo "    detailed scores -> ${SUITE_LOG}"
 [ "$failures" -eq 0 ] && { echo "STATUS: PASSED"; exit 0; } || { echo "STATUS: FAILED"; exit 1; }

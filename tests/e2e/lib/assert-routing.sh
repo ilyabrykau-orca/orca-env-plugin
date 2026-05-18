@@ -67,6 +67,29 @@ assert_no_native_on_code() {
         .input.file_path // .input.pattern // "unknown"
     ' 2>/dev/null | grep -E '\.(py|go|ts|tsx|js|jsx|rs|cpp|c|h|hpp|rb|java)$' || true)
 
+    # Detect Bash tool calls whose command targets source file paths.
+    # A token is flagged when it contains "/" (looks like a path) and ends with
+    # a recognised source extension — conservative enough to avoid false-positives
+    # from quoted strings like "use .go files" while catching cat/grep/etc. on
+    # real paths like handlers/foo.go or services/bar.py.
+    local bash_violations
+    bash_violations=$(echo "$transcript" | jq -r '
+        .[]? |
+        select(.type == "assistant") |
+        .message.content[]? |
+        select(.type == "tool_use") |
+        select(.name == "Bash") |
+        .input.command // "" |
+        split(" ")[] |
+        select(
+            test("/") and
+            test("\\.(py|go|ts|tsx|js|jsx|rs|cpp|c|h|hpp|rb|java)$")
+        )
+    ' 2>/dev/null || true)
+
+    violations="${violations}${bash_violations:+$'\n'$bash_violations}"
+    violations=$(echo "$violations" | grep -v '^$' || true)
+
     if [ -z "$violations" ]; then
         echo "  [PASS] $test_name"
         return 0
