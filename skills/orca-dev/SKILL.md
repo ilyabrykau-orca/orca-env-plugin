@@ -34,7 +34,7 @@ Activate: `mcp__serena__activate_project(project=<name>)` when switching repos.
 1. `find_referencing_symbols(name_path=, relative_path=FILE)` before any edit/delete.
 2. `replace_symbol_body` (structured) preferred over `replace_content` (text).
 3. `replace_content`: backrefs use `$!1`, not `\1`. Mode `"literal"` | `"regex"`.
-4. `read_file`: 0-based lines, `end_line` inclusive.
+4. `read_file`: NOT available in claude-code context; use CBM `search_code`/`get_code_snippet` for reads.
 
 ## Parallelism
 

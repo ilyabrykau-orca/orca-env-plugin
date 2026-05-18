@@ -39,4 +39,4 @@ mcp__serena__activate_project(project=<detected-project>)
 | `replace_content` | mode | `"literal"` or `"regex"` | `True`, `false`, `"regexp"` |
 | `replace_content` | backrefs | `$!1`, `$!2` | `\1`, `\2` |
 | `find_symbol` (Serena) | symbol | `name_path_pattern` | `name`, `symbol_name` |
-| `read_file` | lines | 0-based, `end_line` inclusive | 1-based |
+| `read_file` | N/A | NOT available in claude-code context; use CBM search_code/get_code_snippet instead | — |
