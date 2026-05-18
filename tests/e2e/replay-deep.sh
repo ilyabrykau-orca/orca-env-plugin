@@ -9,12 +9,14 @@
 #   - top sessions by SLIPPED count
 set -o pipefail
 
-PROJECTS_DIR="${HOME}/.claude/projects"
+PROJECTS_DIR="${PROJECTS_DIR:-${HOME}/.claude/projects}"
 SINCE=""
 JOBS=8
 FORMAT="report"
 CACHE_DIR="${TMPDIR:-/tmp}/orca-replay-cache"
 NO_CACHE=0
+CWD_FILTER=""
+MIN_SIZE="+1k"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -23,6 +25,9 @@ while [ $# -gt 0 ]; do
     --csv)      FORMAT="csv"; shift ;;
     --tsv)      FORMAT="tsv"; shift ;;
     --report)   FORMAT="report"; shift ;;
+    --cwd-filter)    CWD_FILTER="$2"; shift 2 ;;
+    --projects-dir)  PROJECTS_DIR="$2"; shift 2 ;;
+    --min-size)      MIN_SIZE="$2"; shift 2 ;;
     --no-cache) NO_CACHE=1; shift ;;
     *)          echo "unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -35,9 +40,10 @@ TMP=$(mktemp)
 trap 'rm -f "$LIST" "$TMP"' EXIT
 
 if [ -n "$SINCE" ]; then
-  find "$PROJECTS_DIR" -name '*.jsonl' -type f -size +1k -newermt "$SINCE" 2>/dev/null > "$LIST"
+  SIZE_ARG=(); [[ -n "$MIN_SIZE" && "$MIN_SIZE" != "0" ]] && SIZE_ARG=(-size "$MIN_SIZE")
+find "$PROJECTS_DIR" -name '*.jsonl' -type f "${SIZE_ARG[@]}" -newermt "$SINCE" 2>/dev/null > "$LIST"
 else
-  find "$PROJECTS_DIR" -name '*.jsonl' -type f -size +1k 2>/dev/null > "$LIST"
+  find "$PROJECTS_DIR" -name '*.jsonl' -type f "${SIZE_ARG[@]}" 2>/dev/null > "$LIST"
 fi
 
 n=$(wc -l < "$LIST" | tr -d ' ')
@@ -98,6 +104,24 @@ export -f process_one
 export JQ_PROG CACHE_DIR NO_CACHE
 
 xargs -P "$JOBS" -I{} bash -c 'process_one "{}"' < "$LIST" > "$TMP"
+
+# Validate regex early (before processing) to fail fast on bad patterns
+if [ -n "$CWD_FILTER" ]; then
+  if ! echo "" | awk -v pat="$CWD_FILTER" '$0 ~ pat' >/dev/null 2>&1; then
+    echo "error: --cwd-filter '$CWD_FILTER' is not a valid regex" >&2; exit 2
+  fi
+fi
+
+# Filter to watched CWDs only (e.g. --cwd-filter "$HOME/src/orca")
+if [ -n "$CWD_FILTER" ]; then
+  FILTERED=$(mktemp)
+  trap 'rm -f "$LIST" "$TMP" "$FILTERED"' EXIT
+  awk -F'\t' -v pat="$CWD_FILTER" '$1 ~ pat' "$TMP" > "$FILTERED"
+  n_before=$(wc -l < "$TMP" | tr -d ' ')
+  n_after=$(wc -l < "$FILTERED" | tr -d ' ')
+  echo "CWD filter '$CWD_FILTER': $n_before → $n_after rows" >&2
+  TMP="$FILTERED"
+fi
 
 if [ "$FORMAT" = "tsv" ]; then
   cat "$TMP"
