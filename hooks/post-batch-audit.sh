@@ -3,8 +3,11 @@
 # Catches escapes that slipped past PreToolUse deny (known bypass: #37210, #33106).
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 INPUT=$(cat)
-AUDIT_DIR="${CLAUDE_PLUGIN_DATA:-${CLAUDE_PLUGIN_ROOT}/state}/audit"
+AUDIT_DIR="${CLAUDE_PLUGIN_DATA:-${PLUGIN_ROOT}/state}/audit"
 mkdir -p "$AUDIT_DIR"
 
 TS=$(date -u +%FT%TZ)
