@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# SessionStart hook: detect Serena project + inject orca-setup skill
+# SessionStart hook: inject 2-line pointer + Serena activate_project.
+# Full routing rules in ~/.claude/ROUTING.md (JIT loaded by agent on demand).
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+JQ=$(command -v jq 2>/dev/null || command -v jaq 2>/dev/null) || exit 0
 
-# Detect Serena project from $PWD
-# Order matters: check more-specific paths before less-specific
 detect_project() {
     local cwd="$PWD"
     case "$cwd" in
@@ -20,37 +18,15 @@ detect_project() {
     esac
 }
 
-# Read master skill content
-skill_content=$(< "${PLUGIN_ROOT}/skills/orca-setup/SKILL.md") 2>/dev/null || skill_content=""
-
-# Detect project
 project=$(detect_project)
 
-# Build project activation block
-project_ctx=""
+ctx="CRITICAL: NEVER use native Read/Edit/Grep/Glob on source files (.go .py .ts .tsx .js .jsx .rs). Full rules: read ~/.claude/ROUTING.md before any file operation."
 if [ -n "$project" ]; then
-    project_ctx="SERENA WORKSPACE DETECTED: project='${project}' at ${PWD}
-
+    ctx="${ctx}
 IMMEDIATELY call: mcp__serena__activate_project(project=${project})"
 fi
 
-# Build session context as plain string (jq handles escaping)
-session_ctx="<EXTREMELY_IMPORTANT>
-You have orca workspace superpowers.
-
-**Orca workspace setup — read and follow these instructions:**
-
-${skill_content}"
-if [ -n "$project" ]; then
-    session_ctx="${session_ctx}
-
-${project_ctx}"
-fi
-session_ctx="${session_ctx}
-</EXTREMELY_IMPORTANT>"
-
-# Output dual-shape JSON (additionalContext for Claude Code, additional_context for Cursor)
-jq -n --arg ctx "$session_ctx" \
+"$JQ" -n --arg ctx "$ctx" \
   '{"additional_context": $ctx,
     "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": $ctx}}'
 

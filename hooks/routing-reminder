@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# UserPromptSubmit: inject 3-line routing reminder per turn to counter instruction drift.
+# Research: reminder injection reduces KL divergence 30% (arXiv 2510.07777).
+JQ=$(command -v jq 2>/dev/null || command -v jaq 2>/dev/null) || exit 0
+ctx="ROUTING: CBM (search_code→get_code_snippet) for reads. Serena (replace_content) for edits. NEVER native Read/Grep/Glob on .go/.py/.ts/.tsx/.js/.rs source files."
+"$JQ" -n --arg ctx "$ctx" '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":$ctx}}'

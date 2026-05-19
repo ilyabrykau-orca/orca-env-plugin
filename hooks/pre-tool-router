@@ -22,10 +22,10 @@ parsed=$(printf '%s' "$input" | "$JQ" -r \
 # ═══════════════════════════════════════════════════════════════════════
 case "$tool_name" in
   Grep)
-    echo "BLOCKED: Native Grep. Use mcp__codebase-memory-mcp__search_code or mcp__serena__search_for_pattern." >&2
+    echo "[ROUTING] BLOCKED: native Grep on source. Read ~/.claude/ROUTING.md → use CBM search_code." >&2
     exit 2 ;;
   Glob)
-    echo "BLOCKED: Native Glob. Use mcp__codebase-memory-mcp__search_graph or mcp__serena__find_file." >&2
+    echo "[ROUTING] BLOCKED: native Glob on source. Read ~/.claude/ROUTING.md → use CBM search_graph." >&2
     exit 2 ;;
 esac
 
@@ -39,12 +39,10 @@ case "$tool_name" in
         *.py|*.go|*.ts|*.tsx|*.js|*.jsx|*.rs|*.cpp|*.c|*.h|*.hpp|*.rb|*.java|*.kt|*.php|*.scala|*.swift|*.sh|*.bash)
           case "$tool_name" in
             Read)
-              # fail-open: allow read but hint toward CBM (less friction, data still useful)
-              echo "TIP: use search_code(pattern=, project=) then get_code_snippet(qualified_name=SYMBOL_NAME, project=). Do NOT pass file paths to get_code_snippet." >&2
-              exit 1 ;;
+              echo "[ROUTING] BLOCKED: native Read on '$file_path'. Read ~/.claude/ROUTING.md → use CBM search_code/get_code_snippet." >&2
+              exit 2 ;;
             Edit|Write)
-              # fail-closed: destructive writes must go through Serena
-              echo "BLOCKED: Native $tool_name on '$file_path'. Use mcp__serena__replace_content(needle=, repl=, mode=) or replace_symbol_body." >&2
+              echo "[ROUTING] BLOCKED: native $tool_name on '$file_path'. Read ~/.claude/ROUTING.md → use Serena replace_content." >&2
               exit 2 ;;
           esac
           ;;

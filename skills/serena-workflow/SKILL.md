@@ -5,8 +5,6 @@ description: Serena editing workflow — symbol-level editing, replace_content, 
 
 # Serena Editing Workflow
 
-Native `Edit`/`Write` HARD-BLOCKED on code files. Use Serena for all edits.
-
 ## Pre-edit checklist (mandatory)
 
 Before ANY code edit:
@@ -90,7 +88,7 @@ mcp__serena__rename_symbol(
 | `find_referencing_symbols` path | Must be a FILE, not a directory |
 | `replace_content` backrefs | `$!1`, `$!2` — NOT `\1`, `\2` |
 | `replace_symbol_body` body | Implementation only — no docstrings/comments |
-| `read_file` | NOT available in claude-code context; use CBM `search_code`/`get_code_snippet` for reads |
+
 | `mode` values | Exactly `"literal"` or `"regex"` (lowercase) |
 | `find_symbol` param | `name_path_pattern` — NOT `name` or `symbol_name` |
 
